@@ -1,6 +1,7 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import Image from "next/image"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -136,16 +137,22 @@ function getFaceTransform(face: FaceKey, cfg: FaceConfig): string {
   }
 }
 
+function buildInitialFaces(config: FaceConfig): Record<FaceKey, FaceConfig> {
+  return {
+    front: { ...config },
+    right: { ...config },
+    left: { ...config },
+    top: { ...config },
+    back: { ...config },
+    bottom: { ...config },
+  }
+}
+
 export default function Page() {
   const [controlsOpen, setControlsOpen] = useState(true)
   const [linkAll, setLinkAll] = useState(true)
   const [globalConfig, setGlobalConfig] = useState<FaceConfig>(baseConfig)
-  const [faces, setFaces] = useState<Record<FaceKey, FaceConfig>>(() =>
-    faceOrder.reduce(
-      (acc, face) => ({ ...acc, [face]: { ...baseConfig } }),
-      {} as Record<FaceKey, FaceConfig>
-    )
-  )
+  const [faces, setFaces] = useState<Record<FaceKey, FaceConfig>>(() => buildInitialFaces(baseConfig))
   const [tilt, setTilt] = useState({ x: -34, y: 120 })
   const [position, setPosition] = useState({ x: 0, y: 0, z: 0 })
   const [cardCount, setCardCount] = useState(3)
@@ -170,6 +177,8 @@ export default function Page() {
   const [darkMode, setDarkMode] = useState(true)
   const [matrixMode, setMatrixMode] = useState(false)
   const [matrixDepth, setMatrixDepth] = useState(0)
+  const wheelRafRef = useRef<number | null>(null)
+  const pendingWheelDeltaRef = useRef(0)
 
   useEffect(() => {
     // Shuffle client-side only to avoid SSR/client mismatches.
@@ -219,12 +228,14 @@ export default function Page() {
   const handleGlobal = (key: keyof FaceConfig, value: number) => {
     setGlobalConfig((prev) => ({ ...prev, [key]: value }))
     if (linkAll) {
-      setFaces((prev) =>
-        faceOrder.reduce(
-          (acc, face) => ({ ...acc, [face]: { ...prev[face], [key]: value } }),
-          {} as Record<FaceKey, FaceConfig>
-        )
-      )
+      setFaces((prev) => ({
+        front: { ...prev.front, [key]: value },
+        right: { ...prev.right, [key]: value },
+        left: { ...prev.left, [key]: value },
+        top: { ...prev.top, [key]: value },
+        back: { ...prev.back, [key]: value },
+        bottom: { ...prev.bottom, [key]: value },
+      }))
     }
   }
 
@@ -242,23 +253,13 @@ export default function Page() {
   const syncAllFromFace = (face: FaceKey) => {
     const next = faces[face]
     setGlobalConfig(next)
-    setFaces(() =>
-      faceOrder.reduce(
-        (acc, name) => ({ ...acc, [name]: { ...next } }),
-        {} as Record<FaceKey, FaceConfig>
-      )
-    )
+    setFaces(() => buildInitialFaces(next))
     setLinkAll(true)
   }
 
   const resetAll = () => {
     setGlobalConfig(baseConfig)
-    setFaces(() =>
-      faceOrder.reduce(
-        (acc, name) => ({ ...acc, [name]: { ...baseConfig } }),
-        {} as Record<FaceKey, FaceConfig>
-      )
-    )
+    setFaces(() => buildInitialFaces(baseConfig))
     setTilt({ x: -34, y: 120 })
     setPosition({ x: 0, y: 0, z: 0 })
     setCardCount(3)
@@ -282,22 +283,40 @@ export default function Page() {
       const zMin = -depth + inset
       const zMax = depth - inset
       const span = zMax - zMin
-      const delta = -e.deltaY * scrollSensitivity
-      if (scrollShuffleMode) {
-        setTotalScrollDistance((d) => d + Math.abs(delta))
-      }
-      if (matrixMode) {
-        setMatrixDepth((prev) => {
+      pendingWheelDeltaRef.current += -e.deltaY * scrollSensitivity
+      if (wheelRafRef.current !== null) return
+
+      wheelRafRef.current = requestAnimationFrame(() => {
+        const delta = pendingWheelDeltaRef.current
+        pendingWheelDeltaRef.current = 0
+        wheelRafRef.current = null
+        if (!delta) return
+
+        if (scrollShuffleMode) {
+          setTotalScrollDistance((d) => d + Math.abs(delta))
+        }
+        if (matrixMode) {
+          setMatrixDepth((prev) => {
+            const next = prev + delta
+            return Math.max(Math.min(next, span * 2), -span * 2)
+          })
+        }
+        setScrollOffset((prev) => {
           const next = prev + delta
-          return Math.max(Math.min(next, span * 2), -span * 2)
+          return ((next % span) + span) % span
         })
-      }
-      setScrollOffset((prev) => {
-        const next = prev + delta
-        return ((next % span) + span) % span
       })
     },
     [pinnedCardsMode, scrollEnabled, scrollShuffleMode, matrixMode, scrollSensitivity, cardCount, globalConfig.depth]
+  )
+
+  useEffect(
+    () => () => {
+      if (wheelRafRef.current !== null) {
+        cancelAnimationFrame(wheelRafRef.current)
+      }
+    },
+    []
   )
 
   const shufflePhase = useMemo(
@@ -378,10 +397,29 @@ export default function Page() {
 
         const shuffleActive = scrollShuffleMode || matrixMode
         const activated = shuffleActive && (scrollShuffleMode ? isCardActivated(i) : true)
-        const rand = activated ? scrollShuffleOffset(i, shufflePhase, shuffleBounds) : null
-        const ax = rand ? rand.x : 0
-        const ay = rand ? rand.y : 0
-        const az = rand ? rand.z : baseZ
+
+        let ax = 0
+        let ay = 0
+        let az = baseZ
+
+        if (matrixMode) {
+          const matrixSpacing = Math.max(56, Math.min(w, h) * 0.72)
+          const matrixCols = Math.max(1, Math.floor((frameSize - inset * 2) / matrixSpacing))
+          const matrixRows = Math.max(1, Math.ceil(cardCount / matrixCols))
+          const col = i % matrixCols
+          const row = Math.floor(i / matrixCols)
+          const xStart = -((matrixCols - 1) * matrixSpacing) / 2
+          const yStart = -((matrixRows - 1) * matrixSpacing) / 2
+
+          ax = xStart + col * matrixSpacing
+          ay = yStart + row * matrixSpacing
+          az = wrap(baseZ + matrixDepth)
+        } else if (activated) {
+          const rand = scrollShuffleOffset(i, shufflePhase, shuffleBounds)
+          ax = rand.x
+          ay = rand.y
+          az = rand.z
+        }
 
         const cardFill = randomCardColors
           ? `hsla(${(i * 137.5) % 360}, 55%, 75%, ${0.85 * cfg.opacity})`
@@ -497,13 +535,16 @@ export default function Page() {
                     }}
                   >
                     {card.imageSrc && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
+                      <Image
                         src={card.imageSrc}
                         alt=""
+                        width={Math.round(card.w)}
+                        height={Math.round(card.h)}
+                        sizes="(max-width: 768px) 40vw, 220px"
                         className="h-full w-full object-cover select-none pointer-events-none"
-                        loading="lazy"
-                        decoding="async"
+                        loading={card.index < 3 ? "eager" : "lazy"}
+                        priority={card.index < 2}
+                        fetchPriority={card.index < 3 ? "high" : "low"}
                         draggable={false}
                       />
                     )}
