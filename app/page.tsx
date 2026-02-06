@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { useCallback, useEffect, useMemo, useState } from "react"
 
 import { Button } from "@/components/ui/button"
@@ -43,30 +44,7 @@ const palette: Record<FaceKey, { rgb: string; alpha: number }> = {
   bottom: { rgb: "24 34 48", alpha: 0.35 },
 }
 
-// Card image sources: current files in /public/cards (numeric + uploaded names).
-const cardImagePaths: string[] = [
-  "/cards/1.png",
-  "/cards/2.png",
-  "/cards/3.png",
-  "/cards/4.png",
-  "/cards/5.png",
-  "/cards/6.png",
-  "/cards/7.png",
-  "/cards/8.png",
-  "/cards/9.png",
-  "/cards/10.png",
-  "/cards/11.png",
-  "/cards/12.png",
-  "/cards/13.avif",
-  "/cards/FnbiWpn0U7CDPorhTKEX9zmJz8.avif",
-  "/cards/Iu66Hu8TqtgWdedJIHLKT1UW0.avif",
-  "/cards/O1YgQ1UEX6KcLg34IhvEbkSkjaE.avif",
-  "/cards/cWzA1jESstJiBGkTXK5mTFCiZQ4.avif",
-  "/cards/ikK6W2dDkTzHARb7AmyoumJZugc.avif",
-  "/cards/iPt4Uch08YrxpHbs6CkVav5UAcM.avif",
-  "/cards/jqag62VEzIxYDaZl0t9XLUglyrY.avif",
-  "/cards/uacWL8dvYlcWRXVLfL2AAOUvMI0.avif",
-]
+const cardImagePaths = Array.from({ length: 21 }, (_, index) => `/cards/${index + 1}.png`)
 
 function getFaceDimensions(face: FaceKey, cfg: FaceConfig): { w: number; h: number } {
   const d = cfg.depth * 2
@@ -175,6 +153,16 @@ export default function Page() {
     // Shuffle client-side only to avoid SSR/client mismatches.
     setCardImagesDeck(shuffleArray(cardImagePaths, imageDeckSeed))
   }, [imageDeckSeed])
+
+  useEffect(() => {
+    const eagerCount = Math.min(6, cardImagesDeck.length)
+    for (let i = 0; i < eagerCount; i++) {
+      const img = new window.Image()
+      img.decoding = "async"
+      img.loading = "eager"
+      img.src = cardImagesDeck[i]
+    }
+  }, [cardImagesDeck])
 
   useEffect(() => {
     const root = document.documentElement
@@ -360,6 +348,37 @@ export default function Page() {
         })
       })
     } else if (cardCount > 0) {
+      if (matrixMode) {
+        const colors = palette.front
+        const size = Math.max(24, Math.min(w, h) * 0.62)
+        const spacing = size + Math.min(48, Math.max(8, cardGap * 0.8))
+        const columns = Math.max(1, Math.ceil(Math.sqrt(cardCount)))
+        const rows = Math.max(1, Math.ceil(cardCount / columns))
+        const layers = Math.max(1, Math.ceil(cardCount / (columns * rows)))
+        const xCenter = (columns - 1) / 2
+        const yCenter = (rows - 1) / 2
+        const zCenter = (layers - 1) / 2
+
+        for (let i = 0; i < cardCount; i++) {
+          const layer = Math.floor(i / (columns * rows))
+          const inLayer = i % (columns * rows)
+          const row = Math.floor(inLayer / columns)
+          const column = inLayer % columns
+          const x = (column - xCenter) * spacing
+          const y = (row - yCenter) * spacing
+          const z = (layer - zCenter) * spacing
+          const imageSrc = cardImagesDeck.length ? cardImagesDeck[(i + shufflePhase) % cardImagesDeck.length] : null
+          const cardFill = randomCardColors
+            ? `hsla(${(i * 137.5) % 360}, 55%, 75%, ${0.85 * cfg.opacity})`
+            : `rgb(${colors.rgb} / ${(colors.alpha * cfg.opacity * cfg.tint * 0.85).toFixed(2)})`
+
+          layouts.push({ x, y, z, w: size, h: size, index: i, fill: cardFill, imageSrc })
+        }
+
+        layouts.sort((a, b) => a.z - b.z)
+        return layouts
+      }
+
       let positions: number[] = []
       if (cardCount === 1) positions = [0]
       else {
@@ -408,7 +427,6 @@ export default function Page() {
     cardImagesDeck,
     frameSize,
     globalConfig,
-    matrixDepth,
     matrixMode,
     pinnedCardsData,
     pinnedCardsMode,
@@ -479,9 +497,7 @@ export default function Page() {
                       height: `${card.h}px`,
                       marginLeft: `${-card.w / 2}px`,
                       marginTop: `${-card.h / 2}px`,
-                      transform: `translate3d(${card.x + hoverX}px, ${card.y + hoverY}px, ${
-                        card.z + hoverZ + (matrixMode ? matrixDepth : 0)
-                      }px)`,
+                      transform: `translate3d(${card.x + hoverX}px, ${card.y + hoverY}px, ${card.z + hoverZ}px)`,
                       transformStyle: "preserve-3d",
                     willChange: "transform",
                     transition: "transform 120ms ease",
@@ -497,13 +513,14 @@ export default function Page() {
                     }}
                   >
                     {card.imageSrc && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
+                      <Image
                         src={card.imageSrc}
                         alt=""
+                        fill
+                        sizes="(max-width: 768px) 30vw, 180px"
                         className="h-full w-full object-cover select-none pointer-events-none"
-                        loading="lazy"
-                        decoding="async"
+                        loading={card.index < 6 ? "eager" : "lazy"}
+                        priority={card.index < 2}
                         draggable={false}
                       />
                     )}
