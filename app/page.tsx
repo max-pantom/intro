@@ -43,16 +43,30 @@ const palette: Record<FaceKey, { rgb: string; alpha: number }> = {
   bottom: { rgb: "24 34 48", alpha: 0.35 },
 }
 
-// Card image sources: numeric names in /public/cards with common extensions.
-// Supports up to 512 files and allows png, jpg, jpeg, gif, webp, and avif.
-const cardImagePaths: string[] = Array.from({ length: 512 }, (_, i) => i + 1).flatMap((n) => [
-  `/cards/${n}.png`,
-  `/cards/${n}.jpg`,
-  `/cards/${n}.jpeg`,
-  `/cards/${n}.gif`,
-  `/cards/${n}.webp`,
-  `/cards/${n}.avif`,
-])
+// Card image sources: current files in /public/cards (numeric + uploaded names).
+const cardImagePaths: string[] = [
+  "/cards/1.png",
+  "/cards/2.png",
+  "/cards/3.png",
+  "/cards/4.png",
+  "/cards/5.png",
+  "/cards/6.png",
+  "/cards/7.png",
+  "/cards/8.png",
+  "/cards/9.png",
+  "/cards/10.png",
+  "/cards/11.png",
+  "/cards/12.png",
+  "/cards/13.avif",
+  "/cards/FnbiWpn0U7CDPorhTKEX9zmJz8.avif",
+  "/cards/Iu66Hu8TqtgWdedJIHLKT1UW0.avif",
+  "/cards/O1YgQ1UEX6KcLg34IhvEbkSkjaE.avif",
+  "/cards/cWzA1jESstJiBGkTXK5mTFCiZQ4.avif",
+  "/cards/ikK6W2dDkTzHARb7AmyoumJZugc.avif",
+  "/cards/iPt4Uch08YrxpHbs6CkVav5UAcM.avif",
+  "/cards/jqag62VEzIxYDaZl0t9XLUglyrY.avif",
+  "/cards/uacWL8dvYlcWRXVLfL2AAOUvMI0.avif",
+]
 
 function getFaceDimensions(face: FaceKey, cfg: FaceConfig): { w: number; h: number } {
   const d = cfg.depth * 2
@@ -139,12 +153,13 @@ export default function Page() {
   const [facesVisible, setFacesVisible] = useState(true)
   const [hoveredCard, setHoveredCard] = useState<number | null>(null)
   const [cardHoverAxis, setCardHoverAxis] = useState<"x" | "y" | "z">("y")
-  const [cardHoverAmount, setCardHoverAmount] = useState(16)
+  const [cardHoverAmount, setCardHoverAmount] = useState(0)
   const [scrollOffset, setScrollOffset] = useState(0)
   const [scrollEnabled, setScrollEnabled] = useState(true)
   const [scrollSensitivity, setScrollSensitivity] = useState(0.5)
   const [randomCardColors, setRandomCardColors] = useState(false)
   const [imageDeckSeed] = useState(() => Math.floor(Math.random() * 100000))
+  const [cardImagesDeck, setCardImagesDeck] = useState<string[]>(cardImagePaths)
   const [pinnedCardsMode, setPinnedCardsMode] = useState(false)
   const [pinnedCardsData, setPinnedCardsData] = useState<{
     positions: { x: number; y: number; z: number }[]
@@ -156,7 +171,10 @@ export default function Page() {
   const [matrixMode, setMatrixMode] = useState(false)
   const [matrixDepth, setMatrixDepth] = useState(0)
 
-  const cardImagesDeck = useMemo(() => shuffleArray(cardImagePaths, imageDeckSeed), [imageDeckSeed])
+  useEffect(() => {
+    // Shuffle client-side only to avoid SSR/client mismatches.
+    setCardImagesDeck(shuffleArray(cardImagePaths, imageDeckSeed))
+  }, [imageDeckSeed])
 
   useEffect(() => {
     const root = document.documentElement
@@ -455,21 +473,22 @@ export default function Page() {
               return (
                 <div
                   key={`card-${card.index}`}
-                  className="absolute left-1/2 top-1/2 cursor-pointer [transform-style:preserve-3d]"
-                  style={{
-                    width: `${card.w}px`,
-                    height: `${card.h}px`,
-                    marginLeft: `${-card.w / 2}px`,
-                    marginTop: `${-card.h / 2}px`,
-                    transform: `translate3d(${card.x + hoverX}px, ${card.y + hoverY}px, ${
-                      card.z + hoverZ + (matrixMode ? matrixDepth : 0)
-                    }px)`,
-                    transformStyle: "preserve-3d",
+                    className="absolute left-1/2 top-1/2 cursor-pointer [transform-style:preserve-3d]"
+                    style={{
+                      width: `${card.w}px`,
+                      height: `${card.h}px`,
+                      marginLeft: `${-card.w / 2}px`,
+                      marginTop: `${-card.h / 2}px`,
+                      transform: `translate3d(${card.x + hoverX}px, ${card.y + hoverY}px, ${
+                        card.z + hoverZ + (matrixMode ? matrixDepth : 0)
+                      }px)`,
+                      transformStyle: "preserve-3d",
+                    willChange: "transform",
                     transition: "transform 120ms ease",
-                  }}
-                  onMouseEnter={() => setHoveredCard(card.index)}
-                  onMouseLeave={() => setHoveredCard(null)}
-                >
+                    }}
+                    onMouseEnter={() => setHoveredCard(card.index)}
+                    onMouseLeave={() => setHoveredCard(null)}
+                  >
                   <div
                     className="h-full w-full overflow-hidden rounded-lg border border-black/25 bg-cover bg-center"
                     style={{
