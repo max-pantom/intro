@@ -1,18 +1,17 @@
-export type NavKey = "home" | "book-a-call" | "dna" | "labs" | "email" | "work"
+export type NavKey = "home" | "book-a-call" | "dna" | "labs" | "email"
 
 export type NavItem = {
   key: NavKey
   label: string
   href: string
+  external?: boolean
 }
 
 export const navItems: NavItem[] = [
   { key: "home", label: "HOME", href: "/" },
-  { key: "book-a-call", label: "BOOK A CALL", href: "/book-a-call" },
+  { key: "book-a-call", label: "BOOK A CALL", href: "https://cal.com/metagravity/design", external: true },
   { key: "dna", label: "DNA", href: "/dna" },
-  { key: "labs", label: "LABS", href: "/labs" },
-  { key: "email", label: "EMAIL", href: "/email" },
-  { key: "work", label: "WORK", href: "/work" },
+  { key: "email", label: "EMAIL", href: "mailto:metagravity0@gmail.com", external: true },
 ]
 
 export type FolderTile = {

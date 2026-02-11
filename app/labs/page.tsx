@@ -1,33 +1,66 @@
-import Link from "next/link"
-import Image from "next/image"
+import { readdir } from "node:fs/promises"
+import path from "node:path"
 
 import { StudioFrame } from "@/components/studio/studio-frame"
 
-const posters = [
-  { href: "/labs/deformity", image: "/cards/9.png", className: "h-[27vh] md:h-[42vh]" },
-  { href: "/labs/action", image: "/cards/10.png", className: "h-[20vh] md:h-[26vh]" },
-  { href: "/labs/cyber", image: "/cards/11.png", className: "h-[24vh] md:h-[35vh]" },
-  { href: "/labs/horror", image: "/cards/12.png", className: "h-[29vh] md:h-[45vh]" },
-  { href: "/labs/high", image: "/cards/13.png", className: "h-[29vh] md:h-[45vh]" },
-  { href: "/labs/hollywood", image: "/cards/14.png", className: "h-[19vh] md:h-[29vh]" },
-  { href: "/labs/anime", image: "/cards/15.png", className: "h-[19vh] md:h-[29vh]" },
-  { href: "/labs/retro", image: "/cards/16.png", className: "h-[19vh] md:h-[29vh]" },
-  { href: "/labs/display", image: "/cards/17.png", className: "h-[19vh] md:h-[29vh]" },
-  { href: "/labs/shrimp", image: "/cards/18.png", className: "h-[19vh] md:h-[29vh]" },
-]
+const LAB_IMAGES_DIR = path.join(process.cwd(), "public", "lab-images")
+const IMAGE_FILE_PATTERN = /\.(png|jpe?g|webp|gif|avif|svg)$/i
 
-export default function LabsPage() {
+async function getLabImagePaths() {
+  try {
+    const entries = await readdir(LAB_IMAGES_DIR, { withFileTypes: true })
+    return entries
+      .filter((entry) => entry.isFile() && IMAGE_FILE_PATTERN.test(entry.name))
+      .map((entry) => entry.name)
+      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }))
+      .map((name) => `/lab-images/${name}`)
+  } catch {
+    return []
+  }
+}
+
+export default async function LabsPage() {
+  const labImages = await getLabImagePaths()
+  const desktopColumns = Array.from({ length: 5 }, () => [] as string[])
+
+  labImages.forEach((src, index) => {
+    desktopColumns[index % desktopColumns.length].push(src)
+  })
+
   return (
-    <StudioFrame navOverride="labs" backgroundClassName="bg-[#de202c]">
-      <main className="grid h-full grid-rows-[170px_1fr] px-4 pb-4 pt-20 md:grid-rows-[250px_1fr] md:px-7 md:pb-6 md:pt-28">
-        <div />
-        <section className="grid min-h-0 grid-cols-2 gap-2 overflow-hidden md:grid-cols-5 md:gap-3">
-          {posters.map((poster) => (
-            <Link key={poster.href} href={poster.href} className={`relative block overflow-hidden bg-[#b11b23] ${poster.className}`}>
-              <Image src={poster.image} alt="" fill sizes="20vw" className="object-cover" draggable={false} />
-            </Link>
+    <StudioFrame
+      navOverride="labs"
+      backgroundColor="#D6282E"
+      headerTone="light"
+      headerClassName="px-4 md:px-[22px]"
+      navClassName="md:-mr-5"
+    >
+      <main className="h-full overflow-y-auto px-4 pb-4 pt-[200px] md:px-[22px] md:pb-7 md:pt-[286px]">
+        <section className="grid grid-cols-2 gap-[8px] md:hidden">
+          {labImages.map((src) => (
+            <article key={src} className="overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={src} alt="" className="block h-auto w-full" draggable={false} loading="lazy" />
+            </article>
           ))}
         </section>
+
+        <section className="hidden md:grid md:grid-cols-5 md:gap-[8px]">
+          {desktopColumns.map((column, columnIndex) => (
+            <div key={`column-${columnIndex}`} className="flex flex-col gap-[8px]">
+              {column.map((src) => (
+                <article key={src} className="overflow-hidden">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={src} alt="" className="block h-auto w-full" draggable={false} loading="lazy" />
+                </article>
+              ))}
+            </div>
+          ))}
+        </section>
+
+        {labImages.length === 0 ? (
+          <p className="pt-4 text-center font-mono text-[12px] tracking-[0.06em] text-[#ffd5d8]">Add images to `public/lab-images`.</p>
+        ) : null}
       </main>
     </StudioFrame>
   )

@@ -1,38 +1,50 @@
-import Link from "next/link"
+import { readdir } from "node:fs/promises"
+import path from "node:path"
 
 import { FolderIcon } from "@/components/studio/folder-icon"
 import { StudioFrame } from "@/components/studio/studio-frame"
 
-const cards = [
-  { href: "/apps/poster-1", image: "/cards/1.png" },
-  { href: "/apps/poster-2", image: "/cards/2.png" },
-  { href: "/apps/poster-3", image: "/cards/3.png" },
-  { href: "/apps/poster-4", image: "/cards/4.png" },
-  { href: "/apps/poster-5", image: "/cards/5.png" },
-  { href: "/apps/poster-6", image: "/cards/6.png" },
-  { href: "/apps/poster-7", image: "/cards/7.png" },
-  { href: "/apps/poster-8", image: "/cards/8.png" },
-]
+const APPS_IMAGES_DIR = path.join(process.cwd(), "public", "apps-images")
+const IMAGE_FILE_PATTERN = /\.(png|jpe?g|webp|gif|avif|svg)$/i
+const MIN_VISIBLE_CARDS = 8
 
-export default function AppsPage() {
+async function getAppsImagePaths() {
+  try {
+    const entries = await readdir(APPS_IMAGES_DIR, { withFileTypes: true })
+    return entries
+      .filter((entry) => entry.isFile() && IMAGE_FILE_PATTERN.test(entry.name))
+      .map((entry) => entry.name)
+      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }))
+      .map((name) => `/apps-images/${name}`)
+  } catch {
+    return []
+  }
+}
+
+export default async function AppsPage() {
+  const appsImages = await getAppsImagePaths()
+  const cardsToRender = Math.max(appsImages.length, MIN_VISIBLE_CARDS)
+
   return (
-    <StudioFrame navOverride="home">
-      <main className="grid h-full grid-rows-[150px_1fr_42px] px-4 pt-20 md:grid-rows-[230px_1fr_70px] md:px-7 md:pt-28">
-        <div className="flex items-center justify-center">
-          <FolderIcon color="silver" className="h-[58px] w-[82px] md:h-[120px] md:w-[170px]" />
-        </div>
+    <StudioFrame navOverride="home" headerClassName="px-5 md:px-6">
+      <div className="pointer-events-none absolute left-1/2 top-5 z-10 -translate-x-1/2">
+        <FolderIcon color="silver" className="h-[76px] w-[92px]" />
+      </div>
 
-        <section className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-6">
-          {cards.map((card) => (
-            <Link key={card.href} href={card.href} className="block overflow-hidden bg-[#cfcfcf]">
-              <div className="h-full w-full bg-[#c6c6c6] bg-cover bg-center" style={{ backgroundImage: `url(${card.image})` }} />
-            </Link>
-          ))}
+      <main className="h-full overflow-y-auto px-5 pb-8 pt-[170px] md:px-6 md:pb-10 md:pt-[212px]">
+        <section className="grid w-full grid-cols-2 gap-[10px] md:grid-cols-4">
+          {Array.from({ length: cardsToRender }).map((_, index) => {
+            const src = appsImages[index]
+            return (
+              <article key={src ?? `placeholder-${index}`} className="aspect-[302/384] overflow-hidden bg-[#d9d9d9]">
+                {src ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={src} alt="" className="block h-full w-full object-cover" draggable={false} loading="lazy" />
+                ) : null}
+              </article>
+            )
+          })}
         </section>
-
-        <div className="flex items-center justify-center font-mono text-[12px] tracking-[0.08em] text-[#3b3b3b] md:text-[42px] md:tracking-[0.09em]">
-          : APPS :
-        </div>
       </main>
     </StudioFrame>
   )
