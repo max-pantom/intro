@@ -1,15 +1,11 @@
 import type { Metadata } from "next";
 import { Agentation } from "agentation";
-import { Geist, Geist_Mono, Noto_Sans } from "next/font/google";
+import { Geist_Mono, Inter, Noto_Serif } from "next/font/google";
 import type { ReactNode } from "react";
 import "./globals.css";
 
-const notoSans = Noto_Sans({variable:'--font-sans'});
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+const inter = Inter({ variable: "--font-sans", subsets: ["latin"] });
+const notoSerif = Noto_Serif({ variable: "--font-serif" });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -17,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Intro",
-  description: "Intro for max",
+  title: "Pantom Portfolio",
+  description: "Pantom is a creative studio for design, development, branding, and MVP delivery.",
 };
 
 export default function RootLayout({
@@ -27,9 +23,9 @@ export default function RootLayout({
   children: ReactNode;
 }>) {
   return (
-    <html lang="en" className={notoSans.variable}>
+    <html lang="en" className={`${inter.variable} ${notoSerif.variable}`}>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistMono.variable} antialiased`}
       >
         {children}
         {process.env.NODE_ENV === "development" && <Agentation />}

@@ -122,8 +122,40 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: "Commit Mono", "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-      "Liberation Mono", "Courier New", monospace;
+    font-family: var(--font-sans), "Avenir Next", "Segoe UI", sans-serif;
+  }
+}
+
+.pantom-card {
+  transition: transform 180ms ease, border-color 180ms ease, background-color 180ms ease;
+}
+
+.pantom-card:hover {
+  transform: translateY(-2px);
+}
+
+.pantom-reveal {
+  animation: pantom-fade-in 480ms ease both;
+}
+
+@keyframes pantom-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pantom-card {
+    transition: none;
+  }
+
+  .pantom-reveal {
+    animation: none;
   }
 }
 
@@ -144,4 +176,3 @@
 .control-panel-scroll::-webkit-scrollbar-thumb:hover {
   background: #0d4ed9;
 }
-
