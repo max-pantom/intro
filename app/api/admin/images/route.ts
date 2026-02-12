@@ -44,6 +44,16 @@ export async function GET(request: Request) {
 
   const config = galleryConfig[gallery]
 
+  let localFiles: string[] = []
+  try {
+    const entries = await readdir(config.folder, { withFileTypes: true })
+    localFiles = entries
+      .filter((entry) => entry.isFile() && IMAGE_FILE_PATTERN.test(entry.name))
+      .map((entry) => `${config.publicPrefix}${entry.name}`)
+  } catch {
+    localFiles = []
+  }
+
   if (hasBlobConfig()) {
     try {
       const response = await list({
@@ -51,27 +61,18 @@ export async function GET(request: Request) {
         token: process.env.BLOB_READ_WRITE_TOKEN,
       })
 
-      const files = response.blobs
-        .map((blob) => blob.url)
+      const blobFiles = response.blobs.map((blob) => blob.url)
+      const files = Array.from(new Set([...blobFiles, ...localFiles]))
         .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }))
 
       return NextResponse.json({ files })
     } catch {
-      return NextResponse.json({ files: [] })
+      return NextResponse.json({ files: localFiles })
     }
   }
 
-  try {
-    const entries = await readdir(config.folder, { withFileTypes: true })
-    const files = entries
-      .filter((entry) => entry.isFile() && IMAGE_FILE_PATTERN.test(entry.name))
-      .map((entry) => `${config.publicPrefix}${entry.name}`)
-      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }))
-
-    return NextResponse.json({ files })
-  } catch {
-    return NextResponse.json({ files: [] })
-  }
+  const files = localFiles.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }))
+  return NextResponse.json({ files })
 }
 
 export async function POST(request: Request) {
