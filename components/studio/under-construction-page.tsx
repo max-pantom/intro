@@ -89,18 +89,50 @@ function pseudoRandom(seed: number) {
 
 function buildGifWindowSeeds(count: number) {
   const hugeWindowIds = new Set([2, 7, 12, 18, 23, 27])
+  const hugeWindowEdgePositions: Record<number, { left: number; top: number }> = {
+    2: { left: -14, top: -14 },
+    7: { left: 68, top: -14 },
+    12: { left: -14, top: 68 },
+    18: { left: 68, top: 68 },
+    23: { left: 28, top: -16 },
+    27: { left: 30, top: 72 },
+  }
 
   return Array.from({ length: count }, (_, index) => {
     const id = index + 1
-    const left = -12 + pseudoRandom(id * 7.1) * 114
-    const top = -10 + pseudoRandom(id * 11.7) * 108
+
+    if (id === 28) {
+      return {
+        id,
+        left: "76%",
+        top: "1%",
+        width: 220,
+        height: 170,
+        rotate: -5,
+      }
+    }
+
     const isHuge = hugeWindowIds.has(id)
-    const width = isHuge
-      ? 320 + Math.floor(pseudoRandom(id * 3.3) * 180)
-      : 92 + Math.floor(pseudoRandom(id * 3.3) * 170)
-    const height = isHuge
-      ? Math.max(280, Math.min(520, width - 52 + Math.floor(pseudoRandom(id * 5.9) * 98)))
-      : 58 + Math.floor(pseudoRandom(id * 5.9) * 120)
+
+    if (isHuge) {
+      const corner = hugeWindowEdgePositions[id]
+      const hugeWidth = 350 + Math.floor(pseudoRandom(id * 3.3) * 160)
+      const hugeHeight = Math.max(280, Math.min(520, hugeWidth - 20 + Math.floor(pseudoRandom(id * 5.9) * 50)))
+
+      return {
+        id,
+        left: `${corner.left.toFixed(2)}%`,
+        top: `${corner.top.toFixed(2)}%`,
+        width: hugeWidth,
+        height: hugeHeight,
+        rotate: -6 + pseudoRandom(id * 9.4) * 12,
+      }
+    }
+
+    const left = -22 + pseudoRandom(id * 7.1) * 124
+    const top = -18 + pseudoRandom(id * 11.7) * 124
+    const width = 90 + Math.floor(pseudoRandom(id * 3.3) * 190)
+    const height = 56 + Math.floor(pseudoRandom(id * 5.9) * 140)
     const rotate = -8 + pseudoRandom(id * 9.4) * 16
 
     return {
@@ -231,6 +263,7 @@ function RetroGifWindow({
   label,
   titleBarClassName = "bg-[#000080]",
   interactive = false,
+  zIndex,
   onClick,
   onMouseEnter,
   onMouseLeave,
@@ -239,6 +272,7 @@ function RetroGifWindow({
   label: string
   titleBarClassName?: string
   interactive?: boolean
+  zIndex?: number
   onClick?: () => void
   onMouseEnter?: () => void
   onMouseLeave?: () => void
@@ -246,7 +280,7 @@ function RetroGifWindow({
   return (
     <div
       className={`${interactive ? "pointer-events-auto cursor-pointer" : "pointer-events-none"} absolute hidden border-2 border-[#0d0d0d] bg-[#c6c6c6] shadow-[inset_-1px_-1px_0_#0d0d0d,inset_1px_1px_0_#ffffff,2px_2px_0_#0d0d0d] md:block`}
-      style={{ left, top, width, transform: `rotate(${rotate}deg)` }}
+      style={{ left, top, width, zIndex, transform: `rotate(${rotate}deg)` }}
       onClick={onClick}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
@@ -282,7 +316,7 @@ export function UnderConstructionPage({
   const [isTerminalOpen, setIsTerminalOpen] = useState(false)
   const [isGif28Hovered, setIsGif28Hovered] = useState(false)
   const [isGif28Alert, setIsGif28Alert] = useState(false)
-  const [desktopBgColor, setDesktopBgColor] = useState("#008081")
+  const [desktopBgColor, setDesktopBgColor] = useState("#bfbfbf")
   const [terminalInput, setTerminalInput] = useState("")
   const [terminalLines, setTerminalLines] = useState<TerminalLine[]>([
     { id: 1, role: "assistant", text: "flippy online" },
@@ -399,6 +433,7 @@ export function UnderConstructionPage({
                 source={livePreviewGif}
                 label={`gif 28 #${seed.id}`}
                 interactive={isSpecial28}
+                zIndex={isSpecial28 ? 34 : undefined}
                 titleBarClassName={isSpecial28 ? specialTitleClass : "bg-[#000080]"}
                 onClick={isSpecial28 ? handleGif28Click : undefined}
                 onMouseEnter={isSpecial28 ? () => setIsGif28Hovered(true) : undefined}
