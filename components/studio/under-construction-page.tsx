@@ -2,7 +2,16 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { useEffect, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from "react"
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type MouseEvent,
+  type PointerEvent,
+  type ReactNode,
+} from "react"
 
 import { FolderIcon, type FolderColor } from "@/components/studio/folder-icon"
 import { StudioFrame } from "@/components/studio/studio-frame"
@@ -21,6 +30,7 @@ type FloatingWindowProps = {
   subtitle?: string
   className?: string
   desktopRotate?: number
+  onCloseAttempt?: (event: MouseEvent<HTMLButtonElement>) => void
   children: ReactNode
 }
 
@@ -40,6 +50,13 @@ type CursorPixel = {
   size: number
 }
 
+type ErrorDialog = {
+  id: number
+  x: number
+  y: number
+  message: string
+}
+
 type GifWindowSeed = {
   id: number
   left: string
@@ -51,28 +68,38 @@ type GifWindowSeed = {
 
 const trailColors = ["#00f5ff", "#ff4fd8", "#fff05f", "#7cff6b", "#8ea8ff", "#ffffff", "#ff9f40"]
 
-const gifWindowSeeds: GifWindowSeed[] = [
-  { id: 1, left: "1%", top: "2%", width: 112, height: 70, rotate: -6 },
-  { id: 2, left: "14%", top: "1%", width: 146, height: 92, rotate: 4 },
-  { id: 3, left: "29%", top: "3%", width: 126, height: 78, rotate: -2 },
-  { id: 4, left: "45%", top: "1%", width: 168, height: 110, rotate: 5 },
-  { id: 5, left: "61%", top: "2%", width: 118, height: 74, rotate: -4 },
-  { id: 6, left: "77%", top: "1%", width: 154, height: 96, rotate: 3 },
-  { id: 7, left: "3%", top: "23%", width: 188, height: 120, rotate: 5 },
-  { id: 8, left: "83%", top: "20%", width: 124, height: 76, rotate: -5 },
-  { id: 9, left: "1%", top: "39%", width: 132, height: 84, rotate: -4 },
-  { id: 10, left: "85%", top: "38%", width: 170, height: 112, rotate: 4 },
-  { id: 11, left: "5%", top: "56%", width: 116, height: 72, rotate: 3 },
-  { id: 12, left: "84%", top: "56%", width: 142, height: 90, rotate: -3 },
-  { id: 13, left: "2%", top: "73%", width: 160, height: 104, rotate: -5 },
-  { id: 14, left: "18%", top: "78%", width: 122, height: 76, rotate: 4 },
-  { id: 15, left: "34%", top: "82%", width: 178, height: 116, rotate: -2 },
-  { id: 16, left: "50%", top: "80%", width: 128, height: 80, rotate: 3 },
-  { id: 17, left: "66%", top: "82%", width: 164, height: 106, rotate: -4 },
-  { id: 18, left: "80%", top: "76%", width: 120, height: 74, rotate: 4 },
-  { id: 19, left: "72%", top: "17%", width: 136, height: 86, rotate: -2 },
-  { id: 20, left: "20%", top: "15%", width: 210, height: 132, rotate: 2 },
+const closeErrorMessages = [
+  "ok where are you going to",
+  "just contact me",
+  "we are hiring clients",
+  "this window is still needed",
+  "close denied while building",
 ]
+
+function pseudoRandom(seed: number) {
+  const value = Math.sin(seed * 12.9898) * 43758.5453
+  return value - Math.floor(value)
+}
+
+function buildGifWindowSeeds(count: number) {
+  return Array.from({ length: count }, (_, index) => {
+    const id = index + 1
+    const left = Math.floor(pseudoRandom(id * 7.1) * 84)
+    const top = Math.floor(pseudoRandom(id * 11.7) * 82)
+    const width = 96 + Math.floor(pseudoRandom(id * 3.3) * 150)
+    const height = 58 + Math.floor(pseudoRandom(id * 5.9) * 96)
+    const rotate = -8 + pseudoRandom(id * 9.4) * 16
+
+    return {
+      id,
+      left: `${left}%`,
+      top: `${top}%`,
+      width,
+      height,
+      rotate,
+    }
+  })
+}
 
 let windowZSeed = 40
 
@@ -81,7 +108,7 @@ function getNextWindowZ() {
   return windowZSeed
 }
 
-function FloatingWindow({ title, subtitle, className, desktopRotate = 0, children }: FloatingWindowProps) {
+function FloatingWindow({ title, subtitle, className, desktopRotate = 0, onCloseAttempt, children }: FloatingWindowProps) {
   const [offset, setOffset] = useState({ x: 0, y: 0 })
   const [zIndex, setZIndex] = useState<number>(() => getNextWindowZ())
   const [isDragging, setIsDragging] = useState(false)
@@ -163,7 +190,16 @@ function FloatingWindow({ title, subtitle, className, desktopRotate = 0, childre
         <div className="flex items-center gap-1">
           <span className="inline-flex h-3 w-3 items-center justify-center border border-[#0d0d0d] bg-[#c6c6c6] font-mono text-[8px] leading-none text-black">-</span>
           <span className="inline-flex h-3 w-3 items-center justify-center border border-[#0d0d0d] bg-[#c6c6c6] font-mono text-[8px] leading-none text-black">+</span>
-          <span className="inline-flex h-3 w-3 items-center justify-center border border-[#0d0d0d] bg-[#c6c6c6] font-mono text-[8px] leading-none text-black">x</span>
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation()
+              onCloseAttempt?.(event)
+            }}
+            className="inline-flex h-3 w-3 items-center justify-center border border-[#0d0d0d] bg-[#c6c6c6] font-mono text-[8px] leading-none text-black"
+          >
+            x
+          </button>
         </div>
       </div>
       {subtitle ? <p className="border-b border-black/20 px-2 py-1 font-mono text-[9px] uppercase tracking-[0.06em] text-black/65">{subtitle}</p> : null}
@@ -203,8 +239,30 @@ export function UnderConstructionPage({
   backLabel = "BACK HOME",
 }: UnderConstructionPageProps) {
   const livePreviewGif = "/lab-images/28.gif"
+  const gifWindowSeeds = useMemo(() => buildGifWindowSeeds(20), [])
   const [trail, setTrail] = useState<CursorPixel[]>([])
+  const [errorDialogs, setErrorDialogs] = useState<ErrorDialog[]>([])
   const pixelIdRef = useRef(0)
+  const errorIdRef = useRef(0)
+
+  const spawnCloseError = (originX: number, originY: number) => {
+    const message = closeErrorMessages[Math.floor(Math.random() * closeErrorMessages.length)]
+    const viewportWidth = window.innerWidth
+    const viewportHeight = window.innerHeight
+    const dialogWidth = 290
+    const dialogHeight = 116
+    const nextX = Math.max(12, Math.min(viewportWidth - dialogWidth - 12, originX + (Math.random() - 0.5) * 160))
+    const nextY = Math.max(12, Math.min(viewportHeight - dialogHeight - 12, originY + (Math.random() - 0.5) * 120))
+    const id = errorIdRef.current + 1
+    errorIdRef.current = id
+
+    setErrorDialogs((current) => [...current.slice(-5), { id, x: nextX, y: nextY, message }])
+  }
+
+  const handleWindowCloseAttempt = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault()
+    spawnCloseError(event.clientX, event.clientY)
+  }
 
   useEffect(() => {
     let rafId = 0
@@ -212,23 +270,25 @@ export function UnderConstructionPage({
     let lastY = -999
 
     const spawnPixel = (x: number, y: number) => {
-      const color = trailColors[Math.floor(Math.random() * trailColors.length)]
-      const size = Math.random() > 0.45 ? 4 : 3
-      const jitterX = (Math.random() - 0.5) * 8
-      const jitterY = (Math.random() - 0.5) * 8
-      const id = pixelIdRef.current + 1
-      pixelIdRef.current = id
+      for (let index = 0; index < 3; index += 1) {
+        const color = trailColors[Math.floor(Math.random() * trailColors.length)]
+        const size = 6 + Math.floor(Math.random() * 7)
+        const jitterX = (Math.random() - 0.5) * 26
+        const jitterY = (Math.random() - 0.5) * 26
+        const id = pixelIdRef.current + 1
+        pixelIdRef.current = id
 
-      setTrail((current) => [...current.slice(-50), { id, x: x + jitterX, y: y + jitterY, color, size }])
+        setTrail((current) => [...current.slice(-160), { id, x: x + jitterX, y: y + jitterY, color, size }])
 
-      window.setTimeout(() => {
-        setTrail((current) => current.filter((pixel) => pixel.id !== id))
-      }, 520)
+        window.setTimeout(() => {
+          setTrail((current) => current.filter((pixel) => pixel.id !== id))
+        }, 920)
+      }
     }
 
     const onPointerMove = (event: globalThis.PointerEvent) => {
       const movement = Math.abs(event.clientX - lastX) + Math.abs(event.clientY - lastY)
-      if (movement < 5) return
+      if (movement < 2) return
 
       lastX = event.clientX
       lastY = event.clientY
@@ -246,10 +306,8 @@ export function UnderConstructionPage({
   }, [])
 
   return (
-    <StudioFrame navOverride={navKey} backgroundColor="#ffffff">
-      <main className="relative h-full overflow-y-auto px-4 pb-10 pt-24 md:px-8 md:pb-14 md:pt-28">
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.08)_1px,transparent_1px)] bg-[size:14px_14px]" />
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,rgba(255,255,255,0.2),transparent_40%),radial-gradient(circle_at_85%_15%,rgba(147,233,255,0.2),transparent_40%),radial-gradient(circle_at_40%_88%,rgba(255,201,239,0.18),transparent_45%)]" />
+    <StudioFrame navOverride={navKey} backgroundColor="#f3f3f3">
+      <main className="relative h-full overflow-hidden px-4 pb-10 pt-24 md:px-8 md:pb-14 md:pt-28">
 
         <div className="relative mx-auto flex w-full max-w-[1320px] flex-col gap-4 md:block md:h-[980px]">
           {gifWindowSeeds.map((seed) => (
@@ -285,7 +343,13 @@ export function UnderConstructionPage({
             </Link>
           </section>
 
-          <FloatingWindow title="Live Build Feed" subtitle="gif 28 stream" className="md:absolute md:left-[7%] md:top-[26%] md:w-[320px]" desktopRotate={-2}>
+          <FloatingWindow
+            title="Live Build Feed"
+            subtitle="gif 28 stream"
+            className="hidden md:absolute md:left-[7%] md:top-[26%] md:w-[320px] md:block"
+            desktopRotate={-2}
+            onCloseAttempt={handleWindowCloseAttempt}
+          >
             <div className="relative overflow-hidden border border-black/15">
               <Image src={livePreviewGif} alt="Animated studio preview feed" width={320} height={424} unoptimized className="h-[170px] w-full object-cover" />
               <span className="absolute left-2 top-2 border border-white/40 bg-black/55 px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.08em] text-white">
@@ -294,14 +358,26 @@ export function UnderConstructionPage({
             </div>
           </FloatingWindow>
 
-          <FloatingWindow title="Team Update" subtitle="owner status" className="md:absolute md:right-[9%] md:top-[25%] md:w-[320px]" desktopRotate={3}>
+          <FloatingWindow
+            title="Team Update"
+            subtitle="owner status"
+            className="hidden md:absolute md:right-[9%] md:top-[25%] md:w-[320px] md:block"
+            desktopRotate={3}
+            onCloseAttempt={handleWindowCloseAttempt}
+          >
             <p className="font-mono text-[11px] uppercase tracking-[0.06em] text-black/80">max is working on this</p>
             <div className="mt-3 h-2 w-full overflow-hidden border border-black/20 bg-white/60">
               <div className="h-full w-[64%] animate-pulse bg-[#1f74ff]" />
             </div>
           </FloatingWindow>
 
-          <FloatingWindow title="Release ETA" subtitle="short note" className="md:absolute md:right-[14%] md:top-[54%] md:w-[300px]" desktopRotate={-3}>
+          <FloatingWindow
+            title="Release ETA"
+            subtitle="short note"
+            className="hidden md:absolute md:right-[14%] md:top-[54%] md:w-[300px] md:block"
+            desktopRotate={-3}
+            onCloseAttempt={handleWindowCloseAttempt}
+          >
             <p className="font-mono text-[11px] uppercase tracking-[0.06em] text-black/80">- almost done give me some days</p>
             <div className="mt-3 flex items-center gap-2">
               <span className="size-2 bg-[#ff5e57] animate-ping motion-reduce:animate-none" />
@@ -309,13 +385,19 @@ export function UnderConstructionPage({
             </div>
           </FloatingWindow>
 
-          <FloatingWindow title="Visual Drop" subtitle="gif 28 monitor" className="md:absolute md:left-[10%] md:top-[58%] md:w-[300px]" desktopRotate={2}>
+          <FloatingWindow
+            title="Visual Drop"
+            subtitle="gif 28 monitor"
+            className="hidden md:absolute md:left-[10%] md:top-[58%] md:w-[300px] md:block"
+            desktopRotate={2}
+            onCloseAttempt={handleWindowCloseAttempt}
+          >
             <div className="relative overflow-hidden border border-black/15">
               <Image src={livePreviewGif} alt="Animated visual snapshot" width={320} height={424} unoptimized className="h-[130px] w-full object-cover" />
             </div>
           </FloatingWindow>
 
-          <div className="grid grid-cols-2 gap-2 md:hidden">
+          <div className="hidden grid-cols-2 gap-2 md:hidden">
             {gifWindowSeeds.slice(0, 8).map((seed) => (
               <div key={`mobile-gif-${seed.id}`} className="border-2 border-[#0d0d0d] bg-[#c6c6c6] shadow-[inset_-1px_-1px_0_#0d0d0d,inset_1px_1px_0_#ffffff]">
                 <div className="border-b border-[#0d0d0d] bg-[#000080] px-1 py-0.5 font-mono text-[8px] uppercase tracking-[0.05em] text-white">gif 28 #{seed.id}</div>
@@ -347,9 +429,42 @@ export function UnderConstructionPage({
               backgroundColor: pixel.color,
               opacity: Math.max(0.18, (index + 1) / trail.length),
               transform: "translate(-50%, -50%)",
-              boxShadow: `0 0 8px ${pixel.color}`,
+              boxShadow: `0 0 12px ${pixel.color}`,
             }}
           />
+        ))}
+      </div>
+
+      <div className="pointer-events-none fixed inset-0 z-[130]">
+        {errorDialogs.map((dialog) => (
+          <div
+            key={dialog.id}
+            className="pointer-events-auto absolute w-[290px] border-2 border-[#0d0d0d] bg-[#c6c6c6] shadow-[inset_-1px_-1px_0_#0d0d0d,inset_1px_1px_0_#ffffff,3px_3px_0_#0d0d0d]"
+            style={{ left: dialog.x, top: dialog.y }}
+          >
+            <div className="flex items-center justify-between border-b border-[#0d0d0d] bg-[#000080] px-2 py-1">
+              <p className="font-mono text-[10px] uppercase tracking-[0.06em] text-white">System Error</p>
+              <button
+                type="button"
+                onClick={() => setErrorDialogs((current) => current.filter((item) => item.id !== dialog.id))}
+                className="inline-flex h-3 w-3 items-center justify-center border border-[#0d0d0d] bg-[#c6c6c6] font-mono text-[8px] leading-none text-black"
+              >
+                x
+              </button>
+            </div>
+            <div className="px-2 py-2">
+              <p className="font-mono text-[10px] uppercase tracking-[0.05em] text-black">{dialog.message}</p>
+              <div className="mt-2 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setErrorDialogs((current) => current.filter((item) => item.id !== dialog.id))}
+                  className="border border-[#0d0d0d] bg-[#c6c6c6] px-2 py-0.5 font-mono text-[9px] uppercase text-black"
+                >
+                  ok
+                </button>
+              </div>
+            </div>
+          </div>
         ))}
       </div>
     </StudioFrame>

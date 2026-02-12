@@ -179,7 +179,7 @@ export function StudioFrame({
   return (
     <div className={`relative h-dvh w-full overflow-hidden ${backgroundClassName ?? ""}`} style={frameStyle}>
       <header className={`pointer-events-none absolute left-0 right-0 top-0 z-20 flex items-start justify-between px-5 pt-5 ${headerClassName ?? ""}`}>
-        <Link href="/" className={`pointer-events-auto text-[24px] leading-none tracking-[-0.02em] ${logoTextColor}`}>
+        <Link href="/" className={`pantom-logo-flip pointer-events-auto text-[24px] leading-none tracking-[-0.02em] ${logoTextColor}`}>
           PANTOM
         </Link>
 
