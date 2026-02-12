@@ -1,5 +1,5 @@
-import { BasicPage } from "@/components/studio/basic-page"
+import { UnderConstructionPage } from "@/components/studio/under-construction-page"
 
 export default function BrandingPage() {
-  return <BasicPage navKey="home" title="BRANDING" folderColor="blue" backHref="/" backLabel="BACK HOME" />
+  return <UnderConstructionPage navKey="home" title="BRANDING" folderColor="blue" backHref="/" backLabel="BACK HOME" />
 }

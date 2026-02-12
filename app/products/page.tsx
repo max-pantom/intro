@@ -1,5 +1,5 @@
-import { BasicPage } from "@/components/studio/basic-page"
+import { UnderConstructionPage } from "@/components/studio/under-construction-page"
 
 export default function ProductsPage() {
-  return <BasicPage navKey="home" title="TOOLS" folderColor="yellow" backHref="/" backLabel="BACK HOME" />
+  return <UnderConstructionPage navKey="home" title="TOOLS" folderColor="yellow" backHref="/" backLabel="BACK HOME" />
 }

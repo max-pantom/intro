@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Pantom Studio Site
 
-## Getting Started
+## Overview
 
-First, run the development server:
+This repository contains the Pantom Studio web app built with Next.js (App Router).
+
+The site combines:
+
+- a desktop-like folder navigation experience
+- dynamic studio pages (`apps`, `labs`, `sites`, and more)
+- configurable nav and folder content from local CMS JSON data
+
+## Architecture
+
+### App routes
+
+- `app/page.tsx`: home desktop/folder entry experience
+- `app/labs/*`, `app/apps/*`, `app/sites/*`, `app/principles/*`, etc.: feature and content routes
+- `app/api/cms/public/route.ts`: public CMS payload endpoint
+- `app/api/admin/login/route.ts`: admin auth endpoint
+
+### Shared UI
+
+- `components/studio/studio-frame.tsx`: global shell (header, nav, command palette)
+- `components/studio/folder-icon.tsx`: folder visual system
+- `components/studio/basic-page.tsx`: standard folder page scaffold
+- `components/studio/under-construction-page.tsx`: WIP scaffold with tape asset and construction labels
+
+### Data and config
+
+- `lib/studio-data.ts`: nav and folder tile defaults
+- `data/cms.json`: editable local CMS content
+
+### Static assets
+
+- `public/folders/*`: folder SVGs
+- `public/assets/cellotape.svg`: tape asset used on under-construction pages
+
+## Current WIP sections
+
+The following routes are intentionally placeholder pages while content is being developed:
+
+- `/branding`
+- `/tools`
+- `/start`
+
+Each page currently shows:
+
+- `WORK IN PROGRESS`
+- `MEN AT WORK`
+- `UNDER CONSTRUCTION`
+
+## Getting started
+
+Install dependencies and run development:
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Open `http://localhost:3000`.
