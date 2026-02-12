@@ -32,6 +32,48 @@ type DragState = {
   startOffsetY: number
 }
 
+type CursorPixel = {
+  id: number
+  x: number
+  y: number
+  color: string
+  size: number
+}
+
+type GifWindowSeed = {
+  id: number
+  left: string
+  top: string
+  width: number
+  height: number
+  rotate: number
+}
+
+const trailColors = ["#00f5ff", "#ff4fd8", "#fff05f", "#7cff6b", "#8ea8ff", "#ffffff", "#ff9f40"]
+
+const gifWindowSeeds: GifWindowSeed[] = [
+  { id: 1, left: "1%", top: "2%", width: 112, height: 70, rotate: -6 },
+  { id: 2, left: "14%", top: "1%", width: 146, height: 92, rotate: 4 },
+  { id: 3, left: "29%", top: "3%", width: 126, height: 78, rotate: -2 },
+  { id: 4, left: "45%", top: "1%", width: 168, height: 110, rotate: 5 },
+  { id: 5, left: "61%", top: "2%", width: 118, height: 74, rotate: -4 },
+  { id: 6, left: "77%", top: "1%", width: 154, height: 96, rotate: 3 },
+  { id: 7, left: "3%", top: "23%", width: 188, height: 120, rotate: 5 },
+  { id: 8, left: "83%", top: "20%", width: 124, height: 76, rotate: -5 },
+  { id: 9, left: "1%", top: "39%", width: 132, height: 84, rotate: -4 },
+  { id: 10, left: "85%", top: "38%", width: 170, height: 112, rotate: 4 },
+  { id: 11, left: "5%", top: "56%", width: 116, height: 72, rotate: 3 },
+  { id: 12, left: "84%", top: "56%", width: 142, height: 90, rotate: -3 },
+  { id: 13, left: "2%", top: "73%", width: 160, height: 104, rotate: -5 },
+  { id: 14, left: "18%", top: "78%", width: 122, height: 76, rotate: 4 },
+  { id: 15, left: "34%", top: "82%", width: 178, height: 116, rotate: -2 },
+  { id: 16, left: "50%", top: "80%", width: 128, height: 80, rotate: 3 },
+  { id: 17, left: "66%", top: "82%", width: 164, height: 106, rotate: -4 },
+  { id: 18, left: "80%", top: "76%", width: 120, height: 74, rotate: 4 },
+  { id: 19, left: "72%", top: "17%", width: 136, height: 86, rotate: -2 },
+  { id: 20, left: "20%", top: "15%", width: 210, height: 132, rotate: 2 },
+]
+
 let windowZSeed = 40
 
 function getNextWindowZ() {
@@ -104,26 +146,52 @@ function FloatingWindow({ title, subtitle, className, desktopRotate = 0, childre
 
   return (
     <section
-      className={`relative z-10 overflow-hidden rounded-[8px] border border-black/20 bg-white/56 p-3 shadow-[0_16px_38px_rgba(0,0,0,0.2)] backdrop-blur-sm ${isDesktop && !isDragging ? "transition-transform duration-200" : ""} ${className ?? ""}`}
+      className={`relative z-10 overflow-hidden border-2 border-[#0d0d0d] bg-[#c6c6c6] shadow-[inset_-1px_-1px_0_#0d0d0d,inset_1px_1px_0_#ffffff,3px_3px_0_#0d0d0d] ${isDesktop && !isDragging ? "transition-transform duration-200" : ""} ${className ?? ""}`}
       style={windowStyle}
     >
       <div
-        className={`flex items-center justify-between border-b border-black/15 pb-2 ${isDesktop ? "cursor-grab active:cursor-grabbing" : ""}`}
+        className={`flex items-center justify-between border-b border-[#0d0d0d] bg-[#000080] px-1 py-1 ${isDesktop ? "cursor-move" : ""}`}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={endDrag}
         onPointerCancel={endDrag}
       >
-        <div className="flex items-center gap-1.5">
-          <span className="size-2.5 rounded-full bg-[#ff6d65]" />
-          <span className="size-2.5 rounded-full bg-[#ffd45f]" />
-          <span className="size-2.5 rounded-full bg-[#70db7d]" />
+        <div className="flex items-center gap-1">
+          <span className="size-2 border border-[#0d0d0d] bg-white" />
+          <p className="font-mono text-[10px] uppercase tracking-[0.06em] text-white">{title}</p>
         </div>
-        <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-black/70">{title}</p>
+        <div className="flex items-center gap-1">
+          <span className="inline-flex h-3 w-3 items-center justify-center border border-[#0d0d0d] bg-[#c6c6c6] font-mono text-[8px] leading-none text-black">-</span>
+          <span className="inline-flex h-3 w-3 items-center justify-center border border-[#0d0d0d] bg-[#c6c6c6] font-mono text-[8px] leading-none text-black">+</span>
+          <span className="inline-flex h-3 w-3 items-center justify-center border border-[#0d0d0d] bg-[#c6c6c6] font-mono text-[8px] leading-none text-black">x</span>
+        </div>
       </div>
-      {subtitle ? <p className="pt-2 font-mono text-[10px] uppercase tracking-[0.06em] text-black/60">{subtitle}</p> : null}
-      <div className="pt-2">{children}</div>
+      {subtitle ? <p className="border-b border-black/20 px-2 py-1 font-mono text-[9px] uppercase tracking-[0.06em] text-black/65">{subtitle}</p> : null}
+      <div className="px-2 py-2">{children}</div>
     </section>
+  )
+}
+
+function RetroGifWindow({ left, top, width, height, rotate, source, label }: GifWindowSeed & { source: string; label: string }) {
+  return (
+    <div
+      className="pointer-events-none absolute hidden border-2 border-[#0d0d0d] bg-[#c6c6c6] shadow-[inset_-1px_-1px_0_#0d0d0d,inset_1px_1px_0_#ffffff,2px_2px_0_#0d0d0d] md:block"
+      style={{ left, top, width, transform: `rotate(${rotate}deg)` }}
+    >
+      <div className="flex items-center justify-between border-b border-[#0d0d0d] bg-[#000080] px-1 py-0.5">
+        <span className="font-mono text-[8px] uppercase tracking-[0.06em] text-white">{label}</span>
+        <span className="h-2 w-2 border border-[#0d0d0d] bg-[#c6c6c6]" />
+      </div>
+      <Image
+        src={source}
+        alt="Animated under-construction frame"
+        width={320}
+        height={424}
+        unoptimized
+        className="w-full object-cover"
+        style={{ height }}
+      />
+    </div>
   )
 }
 
@@ -135,220 +203,155 @@ export function UnderConstructionPage({
   backLabel = "BACK HOME",
 }: UnderConstructionPageProps) {
   const livePreviewGif = "/lab-images/28.gif"
-  const dreamcoreWallpaper =
-    "https://images.unsplash.com/photo-1497250681960-ef046c08a56e?auto=format&fit=crop&w=2400&q=80"
+  const [trail, setTrail] = useState<CursorPixel[]>([])
+  const pixelIdRef = useRef(0)
+
+  useEffect(() => {
+    let rafId = 0
+    let lastX = -999
+    let lastY = -999
+
+    const spawnPixel = (x: number, y: number) => {
+      const color = trailColors[Math.floor(Math.random() * trailColors.length)]
+      const size = Math.random() > 0.45 ? 4 : 3
+      const jitterX = (Math.random() - 0.5) * 8
+      const jitterY = (Math.random() - 0.5) * 8
+      const id = pixelIdRef.current + 1
+      pixelIdRef.current = id
+
+      setTrail((current) => [...current.slice(-50), { id, x: x + jitterX, y: y + jitterY, color, size }])
+
+      window.setTimeout(() => {
+        setTrail((current) => current.filter((pixel) => pixel.id !== id))
+      }, 520)
+    }
+
+    const onPointerMove = (event: globalThis.PointerEvent) => {
+      const movement = Math.abs(event.clientX - lastX) + Math.abs(event.clientY - lastY)
+      if (movement < 5) return
+
+      lastX = event.clientX
+      lastY = event.clientY
+
+      cancelAnimationFrame(rafId)
+      rafId = requestAnimationFrame(() => spawnPixel(event.clientX, event.clientY))
+    }
+
+    window.addEventListener("pointermove", onPointerMove, { passive: true })
+
+    return () => {
+      cancelAnimationFrame(rafId)
+      window.removeEventListener("pointermove", onPointerMove)
+    }
+  }, [])
 
   return (
-    <StudioFrame navOverride={navKey} backgroundColor="#d8d5f5">
+    <StudioFrame navOverride={navKey} backgroundColor="#ffffff">
       <main className="relative h-full overflow-y-auto px-4 pb-10 pt-24 md:px-8 md:pb-14 md:pt-28">
-        <div
-          className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-72 saturate-[1.2]"
-          style={{ backgroundImage: `url(${dreamcoreWallpaper})` }}
-        />
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_14%_20%,rgba(255,218,245,0.42),transparent_46%),radial-gradient(circle_at_82%_18%,rgba(171,223,255,0.35),transparent_48%),radial-gradient(circle_at_50%_80%,rgba(212,186,255,0.28),transparent_42%)]" />
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(247,241,255,0.35)_0%,rgba(227,213,255,0.42)_100%)]" />
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute -left-10 top-[15%] size-48 rounded-full border border-white/75 bg-[#99d6ff]/24 blur-[1px] md:size-64" />
-          <div className="absolute right-[6%] top-[20%] size-32 rounded-[16px] border border-white/65 bg-[#ffc3f1]/24 md:size-48" />
-          <div className="absolute left-[20%] top-[65%] size-40 rounded-full border border-white/60 bg-[#bfa9ff]/20" />
-          <div className="absolute bottom-[10%] right-[12%] size-52 rounded-[18px] border border-white/65 bg-[#7ff0a8]/20 blur-[2px]" />
-          <div className="absolute left-[52%] top-[8%] size-20 -translate-x-1/2 rotate-12 border border-black/15 bg-white/35 md:size-24" />
-          <div className="absolute bottom-[20%] left-[8%] h-24 w-24 rotate-[24deg] rounded-full border border-black/10 bg-white/35 blur-[0.5px]" />
-          <div className="absolute left-[26%] top-[18%] h-1.5 w-1.5 animate-pulse rounded-full bg-white/95" />
-          <div className="absolute left-[68%] top-[24%] h-2 w-2 animate-pulse rounded-full bg-[#d9f4ff]/90 [animation-delay:220ms]" />
-          <div className="absolute left-[61%] top-[72%] h-1.5 w-1.5 animate-pulse rounded-full bg-white/90 [animation-delay:400ms]" />
-          <div className="absolute left-[15%] top-[82%] h-2 w-2 animate-pulse rounded-full bg-[#ffd8fb]/85 [animation-delay:120ms]" />
-          <div className="absolute inset-x-0 top-[28%] h-px bg-black/12" />
-          <div className="absolute inset-x-0 bottom-[28%] h-px bg-black/12" />
-        </div>
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.08)_1px,transparent_1px)] bg-[size:14px_14px]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,rgba(255,255,255,0.2),transparent_40%),radial-gradient(circle_at_85%_15%,rgba(147,233,255,0.2),transparent_40%),radial-gradient(circle_at_40%_88%,rgba(255,201,239,0.18),transparent_45%)]" />
 
-        <div className="relative mx-auto flex w-full max-w-[1240px] flex-col gap-4 md:block md:h-[860px]">
-          <section className="relative z-30 flex flex-col items-center gap-3 rounded-[10px] border border-black/20 bg-[#f7f1ff]/82 px-5 py-7 text-center shadow-[0_26px_54px_rgba(0,0,0,0.2)] backdrop-blur-md md:absolute md:left-1/2 md:top-1/2 md:w-[540px] md:-translate-x-1/2 md:-translate-y-1/2 md:px-8 md:py-10">
-            <FolderIcon color={folderColor} className="h-[72px] w-[104px] md:h-[118px] md:w-[168px]" />
-            <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-[#2d2550]/80 md:text-[13px]">Section: {title}</p>
-            <h1 className="font-mono text-[26px] uppercase leading-[0.95] tracking-[-0.03em] text-[#20183f] md:text-[52px]">Under Construction</h1>
-            <p className="max-w-[42ch] font-mono text-[11px] uppercase tracking-[0.05em] text-[#2d2550]/78 md:text-[13px]">
-              We are actively building this area. New visuals, tools, and interactions are still being assembled.
-            </p>
-            <div className="mt-1 flex items-center gap-2 rounded-[999px] border border-black/20 bg-white/65 px-3 py-1">
-              <span className="size-2 rounded-full bg-[#ff5e57] animate-pulse motion-reduce:animate-none" />
-              <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-[#2d2550]/75">Site update in progress</span>
+        <div className="relative mx-auto flex w-full max-w-[1320px] flex-col gap-4 md:block md:h-[980px]">
+          {gifWindowSeeds.map((seed) => (
+            <RetroGifWindow
+              key={seed.id}
+              id={seed.id}
+              left={seed.left}
+              top={seed.top}
+              width={seed.width}
+              height={seed.height}
+              rotate={seed.rotate}
+              source={livePreviewGif}
+              label={`gif 28 #${seed.id}`}
+            />
+          ))}
+
+          <section className="relative z-30 flex flex-col items-center gap-3 border-2 border-[#0d0d0d] bg-[#c6c6c6] px-5 py-7 text-center shadow-[inset_-1px_-1px_0_#0d0d0d,inset_1px_1px_0_#ffffff,4px_4px_0_#0d0d0d] md:absolute md:left-1/2 md:top-1/2 md:w-[560px] md:-translate-x-1/2 md:-translate-y-1/2 md:px-8 md:py-10">
+            <div className="w-full border border-[#0d0d0d] bg-[#000080] px-2 py-1 text-left font-mono text-[10px] uppercase tracking-[0.08em] text-white">
+              C:\\{title.toLowerCase()}\\status.exe
             </div>
-            <Link href={backHref} className="mt-2 font-mono text-[10px] uppercase tracking-[0.1em] text-[#2d2550]/75 underline md:text-[12px]">
+            <FolderIcon color={folderColor} className="h-[72px] w-[104px] md:h-[118px] md:w-[168px]" />
+            <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-black/80 md:text-[13px]">section: {title}</p>
+            <h1 className="font-mono text-[26px] uppercase leading-[0.95] tracking-[-0.03em] text-black md:text-[52px]">Under Construction</h1>
+            <p className="max-w-[42ch] font-mono text-[11px] uppercase tracking-[0.05em] text-black/75 md:text-[13px]">
+              this page is still being built. assets and interactions are loading soon.
+            </p>
+            <div className="mt-1 flex items-center gap-2 border border-black/25 bg-white/70 px-3 py-1">
+              <span className="size-2 bg-[#ff5e57] animate-pulse motion-reduce:animate-none" />
+              <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-black/75">construction in progress</span>
+            </div>
+            <Link href={backHref} className="mt-2 font-mono text-[10px] uppercase tracking-[0.1em] text-black/75 underline md:text-[12px]">
               {backLabel}
             </Link>
           </section>
 
-          <FloatingWindow
-            title="Live Build Feed"
-            subtitle="Window / rendering stream"
-            className="md:absolute md:left-[1%] md:top-[8%] md:w-[330px]"
-            desktopRotate={-3}
-          >
-            <div className="relative overflow-hidden rounded-[6px] border border-black/15">
-              <Image
-                src={livePreviewGif}
-                alt="Animated studio preview feed"
-                width={800}
-                height={800}
-                unoptimized
-                className="h-[150px] w-full object-cover"
-              />
-              <span className="absolute left-2 top-2 rounded-full border border-white/40 bg-black/45 px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.08em] text-white">
-                Streaming
+          <FloatingWindow title="Live Build Feed" subtitle="gif 28 stream" className="md:absolute md:left-[7%] md:top-[26%] md:w-[320px]" desktopRotate={-2}>
+            <div className="relative overflow-hidden border border-black/15">
+              <Image src={livePreviewGif} alt="Animated studio preview feed" width={320} height={424} unoptimized className="h-[170px] w-full object-cover" />
+              <span className="absolute left-2 top-2 border border-white/40 bg-black/55 px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.08em] text-white">
+                live
               </span>
             </div>
           </FloatingWindow>
 
-          <FloatingWindow
-            title="Launch Tracker"
-            subtitle="Current checklist"
-            className="md:absolute md:right-[1%] md:top-[5%] md:w-[290px]"
-            desktopRotate={5}
-          >
-            <ul className="space-y-1.5 font-mono text-[10px] uppercase tracking-[0.05em] text-black/70">
-              <li className="flex items-center justify-between border-b border-black/10 pb-1">
-                <span>Wireframe pass</span>
-                <span className="text-[#17813d]">Done</span>
-              </li>
-              <li className="flex items-center justify-between border-b border-black/10 pb-1">
-                <span>Motion tune</span>
-                <span className="text-[#17813d]">Done</span>
-              </li>
-              <li className="flex items-center justify-between border-b border-black/10 pb-1">
-                <span>Content drop</span>
-                <span className="text-[#8b5b00]">Active</span>
-              </li>
-              <li className="flex items-center justify-between">
-                <span>Final QA</span>
-                <span className="text-[#8b5b00]">Queued</span>
-              </li>
-            </ul>
-          </FloatingWindow>
-
-          <FloatingWindow
-            title="Team Update"
-            subtitle="Owner status"
-            className="md:absolute md:left-[14%] md:top-[34%] md:w-[250px]"
-            desktopRotate={3}
-          >
-            <p className="font-mono text-[11px] uppercase tracking-[0.06em] text-black/75">max is working on this</p>
-            <div className="mt-3 h-2 w-full overflow-hidden rounded-[999px] border border-black/20 bg-white/60">
+          <FloatingWindow title="Team Update" subtitle="owner status" className="md:absolute md:right-[9%] md:top-[25%] md:w-[320px]" desktopRotate={3}>
+            <p className="font-mono text-[11px] uppercase tracking-[0.06em] text-black/80">max is working on this</p>
+            <div className="mt-3 h-2 w-full overflow-hidden border border-black/20 bg-white/60">
               <div className="h-full w-[64%] animate-pulse bg-[#1f74ff]" />
             </div>
           </FloatingWindow>
 
-          <FloatingWindow
-            title="Release ETA"
-            subtitle="Short note"
-            className="md:absolute md:right-[15%] md:top-[31%] md:w-[300px]"
-            desktopRotate={-5}
-          >
-            <p className="font-mono text-[11px] uppercase tracking-[0.06em] text-black/75">- almost done give me some days</p>
+          <FloatingWindow title="Release ETA" subtitle="short note" className="md:absolute md:right-[14%] md:top-[54%] md:w-[300px]" desktopRotate={-3}>
+            <p className="font-mono text-[11px] uppercase tracking-[0.06em] text-black/80">- almost done give me some days</p>
             <div className="mt-3 flex items-center gap-2">
-              <span className="size-2 rounded-full bg-[#ff5e57] animate-ping motion-reduce:animate-none" />
-              <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-black/60">Current phase: polish</span>
+              <span className="size-2 bg-[#ff5e57] animate-ping motion-reduce:animate-none" />
+              <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-black/65">current phase: polish</span>
             </div>
           </FloatingWindow>
 
-          <FloatingWindow
-            title="Signal Board"
-            subtitle="Objects / transparent layers"
-            className="md:absolute md:right-[5%] md:top-[48%] md:w-[260px]"
-            desktopRotate={-6}
-          >
-            <div className="grid grid-cols-3 gap-2">
-              <div className="aspect-square rounded-full border border-black/15 bg-[#88b9ff]/35 animate-pulse" />
-              <div className="aspect-square rounded-[6px] border border-black/15 bg-[#ffb58a]/35" />
-              <div className="aspect-square rotate-[14deg] border border-black/15 bg-[#b8ffb3]/30" />
-              <div className="aspect-square rounded-full border border-black/15 bg-[#d7c0ff]/28" />
-              <div className="aspect-square rounded-[6px] border border-black/15 bg-white/45 animate-pulse" />
-              <div className="aspect-square rounded-full border border-black/15 bg-[#8df2f0]/30" />
+          <FloatingWindow title="Visual Drop" subtitle="gif 28 monitor" className="md:absolute md:left-[10%] md:top-[58%] md:w-[300px]" desktopRotate={2}>
+            <div className="relative overflow-hidden border border-black/15">
+              <Image src={livePreviewGif} alt="Animated visual snapshot" width={320} height={424} unoptimized className="h-[130px] w-full object-cover" />
             </div>
           </FloatingWindow>
 
-          <FloatingWindow
-            title="Status Console"
-            subtitle="Pipeline logs"
-            className="md:absolute md:left-[3%] md:top-[56%] md:w-[290px]"
-            desktopRotate={2}
-          >
-            <div className="space-y-1 rounded-[8px] border border-black/12 bg-black/78 px-2 py-2 font-mono text-[9px] uppercase tracking-[0.06em] text-[#93ff95]">
-              <p>&gt; booting section: {title.toLowerCase()}</p>
-              <p>&gt; bundling interface modules</p>
-              <p>&gt; syncing responsive layouts</p>
-              <p className="text-[#fff88d]">&gt; waiting for final release...</p>
-            </div>
-          </FloatingWindow>
-
-          <FloatingWindow
-            title="Animated Monitor"
-            subtitle="Live throughput"
-            className="md:absolute md:right-[30%] md:top-[60%] md:w-[260px]"
-            desktopRotate={2}
-          >
-            <div className="grid grid-cols-6 gap-1">
-              {["20%", "55%", "35%", "70%", "45%", "62%"].map((height, index) => (
-                <div key={`${height}-${index}`} className="h-14 rounded-[4px] border border-black/15 bg-black/5 px-0.5 py-0.5">
-                  <div
-                    className="w-full rounded-[2px] bg-[#3b82f6] animate-pulse"
-                    style={{
-                      height,
-                      animationDelay: `${index * 120}ms`,
-                    }}
-                  />
-                </div>
-              ))}
-            </div>
-          </FloatingWindow>
-
-          <FloatingWindow
-            title="Build Meter"
-            subtitle="Progress estimate"
-            className="md:absolute md:left-[31%] md:bottom-[6%] md:w-[260px]"
-            desktopRotate={-2}
-          >
-            <div className="space-y-2">
-              <div className="h-2 w-full overflow-hidden rounded-[999px] border border-black/20 bg-white/55">
-                <div className="h-full w-[78%] bg-[#1f74ff]" />
+          <div className="grid grid-cols-2 gap-2 md:hidden">
+            {gifWindowSeeds.slice(0, 8).map((seed) => (
+              <div key={`mobile-gif-${seed.id}`} className="border-2 border-[#0d0d0d] bg-[#c6c6c6] shadow-[inset_-1px_-1px_0_#0d0d0d,inset_1px_1px_0_#ffffff]">
+                <div className="border-b border-[#0d0d0d] bg-[#000080] px-1 py-0.5 font-mono text-[8px] uppercase tracking-[0.05em] text-white">gif 28 #{seed.id}</div>
+                <Image
+                  src={livePreviewGif}
+                  alt="Animated mini feed"
+                  width={320}
+                  height={424}
+                  unoptimized
+                  className="w-full object-cover"
+                  style={{ height: Math.max(64, Math.min(124, seed.height - 6)) }}
+                />
               </div>
-              <div className="flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.06em] text-black/65">
-                <span>78% assembled</span>
-                <span>ETA soon</span>
-              </div>
-            </div>
-          </FloatingWindow>
-
-          <FloatingWindow
-            title="Visual Drop"
-            subtitle="Motion snapshot"
-            className="md:absolute md:left-[54%] md:bottom-[2%] md:w-[250px]"
-            desktopRotate={5}
-          >
-            <div className="relative overflow-hidden rounded-[6px] border border-black/15">
-              <Image
-                src={livePreviewGif}
-                alt="Animated visual snapshot"
-                width={800}
-                height={800}
-                unoptimized
-                className="h-[110px] w-full object-cover"
-              />
-            </div>
-          </FloatingWindow>
-
-          <FloatingWindow
-            title="Notice"
-            subtitle="Keep this tab"
-            className="md:absolute md:right-[25%] md:bottom-[10%] md:w-[240px]"
-            desktopRotate={4}
-          >
-            <p className="font-mono text-[10px] uppercase tracking-[0.05em] text-black/70">
-              This destination is not live yet. We are polishing details and shipping a better experience.
-            </p>
-          </FloatingWindow>
+            ))}
+          </div>
         </div>
       </main>
+
+      <div className="pointer-events-none fixed inset-0 z-[120]">
+        {trail.map((pixel, index) => (
+          <span
+            key={pixel.id}
+            className="absolute block"
+            style={{
+              left: pixel.x,
+              top: pixel.y,
+              width: pixel.size,
+              height: pixel.size,
+              backgroundColor: pixel.color,
+              opacity: Math.max(0.18, (index + 1) / trail.length),
+              transform: "translate(-50%, -50%)",
+              boxShadow: `0 0 8px ${pixel.color}`,
+            }}
+          />
+        ))}
+      </div>
     </StudioFrame>
   )
 }
