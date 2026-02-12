@@ -19,7 +19,7 @@ export function AppsContent({ appsImages, cardsToRender }: AppsContentProps) {
       <div
         className={`pointer-events-none absolute left-1/2 top-5 z-10 -translate-x-1/2 transition-all ${showFolder ? "translate-y-0 opacity-100 duration-[220ms]" : "-translate-y-6 opacity-0 duration-150"}`}
       >
-        <FolderIcon color="silver" className="h-[76px] w-[92px]" />
+        <FolderIcon color="silver" className="h-[62px] w-[76px] md:h-[76px] md:w-[92px]" />
       </div>
 
       <main

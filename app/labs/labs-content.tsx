@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 
 type LabsContentProps = {
   labImages: string[]
@@ -26,9 +26,30 @@ function LabsTile({ src, sizes, priority }: { src: string; sizes: string; priori
 }
 
 export function LabsContent({ labImages }: LabsContentProps) {
+  const MIN_MOBILE_COLUMNS = 2
+  const MAX_MOBILE_COLUMNS = 4
   const MIN_COLUMNS = 3
   const MAX_COLUMNS = 8
+  const [mobileColumnCount, setMobileColumnCount] = useState(2)
   const [desktopColumnCount, setDesktopColumnCount] = useState(5)
+
+  const applyColumnDelta = (delta: number) => {
+    setDesktopColumnCount((value) => Math.min(MAX_COLUMNS, Math.max(MIN_COLUMNS, value + delta)))
+    setMobileColumnCount((value) => Math.min(MAX_MOBILE_COLUMNS, Math.max(MIN_MOBILE_COLUMNS, value + delta)))
+  }
+
+  useEffect(() => {
+    const onColumnsChange = (event: Event) => {
+      const customEvent = event as CustomEvent<{ delta?: number }>
+      const delta = customEvent.detail?.delta
+      if (delta === 1 || delta === -1) {
+        applyColumnDelta(delta)
+      }
+    }
+
+    window.addEventListener("labs-columns-change", onColumnsChange)
+    return () => window.removeEventListener("labs-columns-change", onColumnsChange)
+  }, [])
 
   const desktopColumns = useMemo(() => {
     const columns = Array.from({ length: desktopColumnCount }, () => [] as number[])
@@ -42,12 +63,12 @@ export function LabsContent({ labImages }: LabsContentProps) {
 
   return (
     <>
-      <section className="grid grid-cols-2 gap-[8px] md:hidden">
+      <section className="grid gap-[8px] md:hidden" style={{ gridTemplateColumns: `repeat(${mobileColumnCount}, minmax(0, 1fr))` }}>
         {labImages.map((src, index) => (
           <LabsTile
             key={src}
             src={src}
-            sizes="(max-width: 767px) 50vw, 0px"
+            sizes={`(max-width: 767px) ${Math.round(100 / mobileColumnCount)}vw, 0px`}
             priority={index < 2}
           />
         ))}
@@ -75,7 +96,7 @@ export function LabsContent({ labImages }: LabsContentProps) {
       <div className="fixed bottom-4 right-4 z-30 hidden items-center gap-2 md:flex">
         <button
           type="button"
-          onClick={() => setDesktopColumnCount((value) => Math.max(MIN_COLUMNS, value - 1))}
+          onClick={() => applyColumnDelta(-1)}
           disabled={desktopColumnCount <= MIN_COLUMNS}
           className="h-7 w-7 border border-white/50 bg-black/30 font-mono text-[14px] leading-none text-white transition-opacity hover:opacity-80 disabled:opacity-40"
           aria-label="Decrease columns"
@@ -85,7 +106,7 @@ export function LabsContent({ labImages }: LabsContentProps) {
         <span className="min-w-[28px] text-center font-mono text-[11px] tracking-[0.06em] text-white/90">{desktopColumnCount}</span>
         <button
           type="button"
-          onClick={() => setDesktopColumnCount((value) => Math.min(MAX_COLUMNS, value + 1))}
+          onClick={() => applyColumnDelta(1)}
           disabled={desktopColumnCount >= MAX_COLUMNS}
           className="h-7 w-7 border border-white/50 bg-black/30 font-mono text-[14px] leading-none text-white transition-opacity hover:opacity-80 disabled:opacity-40"
           aria-label="Increase columns"

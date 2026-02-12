@@ -73,6 +73,7 @@ export function StudioFrame({
   const pathname = usePathname()
   const router = useRouter()
   const activeKey = navOverride ?? getActiveNav(pathname)
+  const isLabsPage = pathname.startsWith("/labs")
   const [currentNavItems, setCurrentNavItems] = useState(defaultCmsPublicData.navItems)
   const [currentFolderTiles, setCurrentFolderTiles] = useState(defaultCmsPublicData.homeFolderTiles)
   const [isNavCollapsed, setIsNavCollapsed] = useState(false)
@@ -155,6 +156,10 @@ export function StudioFrame({
     if (exact) runCommand(exact)
   }
 
+  const emitLabsColumnsChange = (delta: -1 | 1) => {
+    window.dispatchEvent(new CustomEvent("labs-columns-change", { detail: { delta } }))
+  }
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
@@ -222,6 +227,28 @@ export function StudioFrame({
               )
             )
           })}
+
+          {isLabsPage && isMobileMenuOpen ? (
+            <div className="mt-1 flex items-center gap-2 border border-white/25 bg-black/20 px-2 py-1 md:hidden">
+              <button
+                type="button"
+                onClick={() => emitLabsColumnsChange(-1)}
+                className="h-6 w-6 border border-white/35 font-mono text-[12px] text-white"
+                aria-label="Decrease labs columns"
+              >
+                -
+              </button>
+              <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-white/85">Labs Size</span>
+              <button
+                type="button"
+                onClick={() => emitLabsColumnsChange(1)}
+                className="h-6 w-6 border border-white/35 font-mono text-[12px] text-white"
+                aria-label="Increase labs columns"
+              >
+                +
+              </button>
+            </div>
+          ) : null}
           </nav>
         </div>
       </header>

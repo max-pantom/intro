@@ -281,24 +281,26 @@ export default function AdminPage() {
   }
 
   return (
-    <main className="pantom-scrollbar h-dvh overflow-y-auto bg-[#ececec] px-3 py-4 md:px-6">
-      <section className="mx-auto w-full max-w-[980px] border border-black/20 bg-white p-4 md:p-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+    <main className="pantom-scrollbar h-dvh overflow-y-auto bg-[#ececec] px-2 py-3 md:px-6">
+      <section className="mx-auto w-full max-w-[980px] border border-black/20 bg-white p-3 md:p-5">
+        <div className="sticky top-0 z-10 -mx-3 -mt-3 border-b border-black/15 bg-white px-3 py-3 md:static md:m-0 md:border-b-0 md:p-0">
+          <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="font-mono text-[13px] uppercase tracking-[0.08em] text-black">CMS Dashboard</h1>
             <p className={`mt-1 font-mono text-[11px] ${statusColor}`}>{status.message || "Edit content, media, and save to publish."}</p>
           </div>
-          <div className="flex items-center gap-2">
-            <button type="button" onClick={save} className="border border-black/35 bg-black px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.06em] text-white">
+          <div className="flex w-full items-center gap-2 sm:w-auto">
+            <button type="button" onClick={save} className="flex-1 border border-black/35 bg-black px-3 py-2 font-mono text-[11px] uppercase tracking-[0.06em] text-white sm:flex-none sm:py-1.5">
               Save
             </button>
-            <button type="button" onClick={logout} className="border border-black/35 px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.06em] text-black">
+            <button type="button" onClick={logout} className="flex-1 border border-black/35 px-3 py-2 font-mono text-[11px] uppercase tracking-[0.06em] text-black sm:flex-none sm:py-1.5">
               Logout
             </button>
           </div>
         </div>
+        </div>
 
-        <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_1fr_1.2fr]">
+        <div className="mt-3 grid gap-3 lg:grid-cols-[1fr_1fr_1.2fr]">
           <section className="border border-black/15 p-3">
             <h2 className="font-mono text-[11px] uppercase tracking-[0.06em] text-black/80">Header Nav</h2>
             <div className="mt-2 space-y-2">
