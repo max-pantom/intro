@@ -5,6 +5,8 @@ import { LabsContent } from "@/app/labs/labs-content"
 import { StudioFrame } from "@/components/studio/studio-frame"
 import { getCmsPublicData } from "@/lib/cms-server"
 
+export const dynamic = "force-dynamic"
+
 const LAB_IMAGES_DIR = path.join(process.cwd(), "public", "lab-images")
 const IMAGE_FILE_PATTERN = /\.(png|jpe?g|webp|gif|avif|svg)$/i
 

@@ -5,6 +5,8 @@ import { WebsiteContent } from "@/app/website/website-content"
 import { StudioFrame } from "@/components/studio/studio-frame"
 import { getCmsPublicData } from "@/lib/cms-server"
 
+export const dynamic = "force-dynamic"
+
 const WEBSITE_IMAGES_DIR = path.join(process.cwd(), "public", "website-images")
 const IMAGE_FILE_PATTERN = /\.(png|jpe?g|webp|gif|avif|svg)$/i
 

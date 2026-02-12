@@ -5,6 +5,8 @@ import { AppsContent } from "@/app/apps/apps-content"
 import { StudioFrame } from "@/components/studio/studio-frame"
 import { getCmsPublicData } from "@/lib/cms-server"
 
+export const dynamic = "force-dynamic"
+
 const APPS_IMAGES_DIR = path.join(process.cwd(), "public", "apps-images")
 const IMAGE_FILE_PATTERN = /\.(png|jpe?g|webp|gif|avif|svg)$/i
 const MIN_VISIBLE_CARDS = 8
