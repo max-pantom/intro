@@ -1,7 +1,7 @@
 import { readdir } from "node:fs/promises"
 import path from "node:path"
 
-import { FolderIcon } from "@/components/studio/folder-icon"
+import { AppsContent } from "@/app/apps/apps-content"
 import { StudioFrame } from "@/components/studio/studio-frame"
 
 const APPS_IMAGES_DIR = path.join(process.cwd(), "public", "apps-images")
@@ -27,25 +27,7 @@ export default async function AppsPage() {
 
   return (
     <StudioFrame navOverride="home" headerClassName="px-5 md:px-6">
-      <div className="pointer-events-none absolute left-1/2 top-5 z-10 -translate-x-1/2">
-        <FolderIcon color="silver" className="h-[76px] w-[92px]" />
-      </div>
-
-      <main className="h-full overflow-y-auto px-5 pb-8 pt-[170px] md:px-6 md:pb-10 md:pt-[212px]">
-        <section className="grid w-full grid-cols-2 gap-[10px] md:grid-cols-4">
-          {Array.from({ length: cardsToRender }).map((_, index) => {
-            const src = appsImages[index]
-            return (
-              <article key={src ?? `placeholder-${index}`} className="aspect-[302/384] overflow-hidden bg-[#d9d9d9]">
-                {src ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={src} alt="" className="block h-full w-full object-cover" draggable={false} loading="lazy" />
-                ) : null}
-              </article>
-            )
-          })}
-        </section>
-      </main>
+      <AppsContent appsImages={appsImages} cardsToRender={cardsToRender} />
     </StudioFrame>
   )
 }

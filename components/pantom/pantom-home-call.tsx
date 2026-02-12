@@ -40,7 +40,7 @@ type DetailConfig = {
 const NAV_ITEMS: NavItem[] = [
   { id: "home", label: "HOME" },
   { id: "book-call", label: "BOOK A CALL" },
-  { id: "dna", label: "DNA" },
+  { id: "dna", label: "PRINCIPLES" },
   { id: "labs", label: "LABS" },
   { id: "email", label: "EMAIL" },
   { id: "work", label: "WORK" },
@@ -48,25 +48,25 @@ const NAV_ITEMS: NavItem[] = [
 
 const HOME_FOLDERS: FolderAction[] = [
   { id: "folder-apps", label: "#APPS", icon: "apps" },
-  { id: "folder-website", label: "#WEBSITE", icon: "website" },
+  { id: "folder-website", label: "#SITES", icon: "website" },
   { id: "folder-labs", label: "#LABS", icon: "labs" },
   { id: "folder-branding", label: "#BRANDING", icon: "branding" },
-  { id: "folder-experiments", label: "#EXPERIMENTS", icon: "experiments" },
-  { id: "folder-be-next", label: "#BE NEXT [↗]", icon: "be-next" },
+  { id: "folder-experiments", label: "#TOOLS", icon: "experiments" },
+  { id: "folder-be-next", label: "#START [↗]", icon: "be-next" },
 ]
 
 const DETAIL_VIEWS: Record<Exclude<ViewId, "home">, DetailConfig> = {
   "nav-book-call": { title: "BOOK A CALL", icon: "apps" },
-  "nav-dna": { title: "DNA", icon: "website" },
+  "nav-dna": { title: "PRINCIPLES", icon: "website" },
   "nav-labs": { title: "LABS", icon: "labs" },
   "nav-email": { title: "EMAIL", icon: "branding" },
   "nav-work": { title: "WORK", icon: "experiments" },
   "folder-apps": { title: "APPS", icon: "apps" },
-  "folder-website": { title: "WEBSITE", icon: "website" },
+  "folder-website": { title: "SITES", icon: "website" },
   "folder-labs": { title: "LABS", icon: "labs" },
   "folder-branding": { title: "BRANDING", icon: "branding" },
-  "folder-experiments": { title: "EXPERIMENTS", icon: "experiments" },
-  "folder-be-next": { title: "BE NEXT", icon: "be-next" },
+  "folder-experiments": { title: "TOOLS", icon: "experiments" },
+  "folder-be-next": { title: "START", icon: "be-next" },
 }
 
 function folderIcon(icon: FolderIconId) {

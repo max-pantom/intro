@@ -10,7 +10,7 @@ export type NavItem = {
 export const navItems: NavItem[] = [
   { key: "home", label: "HOME", href: "/" },
   { key: "book-a-call", label: "BOOK A CALL", href: "https://cal.com/metagravity/design", external: true },
-  { key: "dna", label: "DNA", href: "/dna" },
+  { key: "dna", label: "PRINCIPLES", href: "/principles" },
   { key: "email", label: "EMAIL", href: "mailto:metagravity0@gmail.com", external: true },
 ]
 
@@ -23,9 +23,9 @@ export type FolderTile = {
 
 export const homeFolderTiles: FolderTile[] = [
   { label: "#APPS", href: "/apps", color: "silver" },
-  { label: "#WEBSITE", href: "/website", color: "graphite" },
+  { label: "#SITES", href: "/sites", color: "graphite" },
   { label: "#LABS", href: "/labs", color: "red" },
   { label: "#BRANDING", href: "/branding", color: "blue" },
-  { label: "#EXPERIMENTS", href: "/experiments", color: "yellow" },
-  { label: "#BE NEXT [↗]", href: "/be-next", color: "purple", external: true },
+  { label: "#TOOLS", href: "/tools", color: "yellow" },
+  { label: "#START [↗]", href: "/start", color: "purple", external: true },
 ]
