@@ -44,7 +44,7 @@ export function WebsiteContent({ websiteImages }: WebsiteContentProps) {
                   sizes="(min-width: 768px) calc(100vw - 48px), calc(100vw - 40px)"
                   className="block h-auto w-full"
                   draggable={false}
-                  quality={74}
+                  quality={100}
                   priority={index === 0}
                 />
               </article>

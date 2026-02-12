@@ -3,6 +3,7 @@ import path from "node:path"
 
 import { WebsiteContent } from "@/app/website/website-content"
 import { StudioFrame } from "@/components/studio/studio-frame"
+import { getCmsPublicData } from "@/lib/cms-server"
 
 const WEBSITE_IMAGES_DIR = path.join(process.cwd(), "public", "website-images")
 const IMAGE_FILE_PATTERN = /\.(png|jpe?g|webp|gif|avif|svg)$/i
@@ -21,7 +22,8 @@ async function getWebsiteImagePaths() {
 }
 
 export default async function WebsitePage() {
-  const websiteImages = await getWebsiteImagePaths()
+  const cmsData = await getCmsPublicData()
+  const websiteImages = cmsData.galleries.website.length > 0 ? cmsData.galleries.website : await getWebsiteImagePaths()
 
   return (
     <StudioFrame navOverride="home" headerClassName="px-5 md:px-6">

@@ -18,7 +18,7 @@ function LabsTile({ src, sizes, priority }: { src: string; sizes: string; priori
         sizes={sizes}
         className="block h-auto w-full"
         draggable={false}
-        quality={72}
+        quality={100}
         priority={priority}
       />
     </article>

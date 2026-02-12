@@ -1,0 +1,129 @@
+{
+  "navItems": [
+    {
+      "key": "home",
+      "label": "HOME",
+      "href": "/",
+      "external": false
+    },
+    {
+      "key": "book-a-call",
+      "label": "BOOK A CALL",
+      "href": "https://cal.com/metagravity/design",
+      "external": true
+    },
+    {
+      "key": "dna",
+      "label": "PRINCIPLES",
+      "href": "/principles",
+      "external": false
+    },
+    {
+      "key": "email",
+      "label": "EMAIL",
+      "href": "mailto:metagravity0@gmail.com",
+      "external": true
+    }
+  ],
+  "homeFolderTiles": [
+    {
+      "label": "#APPS",
+      "href": "/apps",
+      "color": "silver",
+      "external": false
+    },
+    {
+      "label": "#SITES",
+      "href": "/sites",
+      "color": "graphite",
+      "external": false
+    },
+    {
+      "label": "#LABS",
+      "href": "/labs",
+      "color": "red",
+      "external": false
+    },
+    {
+      "label": "#BRANDING",
+      "href": "/branding",
+      "color": "blue",
+      "external": false
+    },
+    {
+      "label": "#TOOLS",
+      "href": "/tools",
+      "color": "yellow",
+      "external": false
+    },
+    {
+      "label": "#START [↗]",
+      "href": "/start",
+      "color": "purple",
+      "external": true
+    }
+  ],
+  "galleries": {
+    "apps": [
+      "/apps-images/1.png",
+      "/apps-images/2.png",
+      "/apps-images/3.png",
+      "/apps-images/4.png",
+      "/apps-images/Frame 54.png",
+      "/apps-images/Frame 60.png",
+      "/apps-images/Frame 1707479487.png",
+      "/apps-images/frame55.png",
+      "/apps-images/frame62.png",
+      "/apps-images/Framee] 52.png",
+      "/apps-images/method 5.png",
+      "/apps-images/slideshow-1770875864552.gif",
+      "/apps-images/thiss.png",
+      "/apps-images/user 4.png",
+      "/apps-images/user 7.png"
+    ],
+    "website": [
+      "/website-images/a.png",
+      "/website-images/better auth.png",
+      "/website-images/explor 21.png",
+      "/website-images/Frame 511.png",
+      "/website-images/Index.png",
+      "/website-images/MacBooeek Pro 16_ - 5.png",
+      "/website-images/MacBook Pro 14_ - 28.png",
+      "/website-images/MacBook Pro 16_ - 10.png",
+      "/website-images/Marv.png",
+      "/website-images/Mor 2.png",
+      "/website-images/Preview temp web.png",
+      "/website-images/The money company.png",
+      "/website-images/Tidycal.png",
+      "/website-images/ui - 1.png"
+    ],
+    "labs": [
+      "/lab-images/0_2 (6)-hardcut.png",
+      "/lab-images/frame-1707479489-1770896158959.png",
+      "/lab-images/9.png",
+      "/lab-images/pfp copy.png",
+      "/lab-images/28.gif",
+      "/lab-images/10.png",
+      "/lab-images/12.png",
+      "/lab-images/slideshow-1769119859260.gif",
+      "/lab-images/dir 3 - p 8-posterize.png",
+      "/lab-images/msd.gif",
+      "/lab-images/gj.png",
+      "/lab-images/Gemini_Generated_Image_ln556lln556lln55-pixelate (12).png",
+      "/lab-images/14.png",
+      "/lab-images/slideshow-1770875864552.gif",
+      "/lab-images/78z.png",
+      "/lab-images/18.png",
+      "/lab-images/dir 1 - p 3.png",
+      "/lab-images/15.png",
+      "/lab-images/slideshow-1770651045643.gif",
+      "/lab-images/cas.gif",
+      "/lab-images/qui.png",
+      "/lab-images/xmax_httpss.mj.runhGjeZDS1HsA__--sref_httpss.mj.runa4d88Q42Tv8_de483851-dead-43aa-8fa8-11d4d3aa924c_2.png",
+      "/lab-images/max_a_person_standing_under_the_night_sky_filled_with_satelli_aedc8569-2404-4c92-90cc-f5dc681ff30a_2.png",
+      "/lab-images/nhd.png",
+      "/lab-images/max_asian_woman_puuting_on_headphones_looking_up_on_a_white_b_627f66ed-9a3a-4eca-b2f4-8bb4091a1cf0_2.png",
+      "/lab-images/frame-1707479490-1770897774468.png"
+    ]
+  }
+}

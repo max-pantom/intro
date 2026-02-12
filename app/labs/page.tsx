@@ -3,6 +3,7 @@ import path from "node:path"
 
 import { LabsContent } from "@/app/labs/labs-content"
 import { StudioFrame } from "@/components/studio/studio-frame"
+import { getCmsPublicData } from "@/lib/cms-server"
 
 const LAB_IMAGES_DIR = path.join(process.cwd(), "public", "lab-images")
 const IMAGE_FILE_PATTERN = /\.(png|jpe?g|webp|gif|avif|svg)$/i
@@ -21,7 +22,8 @@ async function getLabImagePaths() {
 }
 
 export default async function LabsPage() {
-  const labImages = await getLabImagePaths()
+  const cmsData = await getCmsPublicData()
+  const labImages = cmsData.galleries.labs.length > 0 ? cmsData.galleries.labs : await getLabImagePaths()
 
   return (
     <StudioFrame

@@ -3,6 +3,7 @@ import path from "node:path"
 
 import { AppsContent } from "@/app/apps/apps-content"
 import { StudioFrame } from "@/components/studio/studio-frame"
+import { getCmsPublicData } from "@/lib/cms-server"
 
 const APPS_IMAGES_DIR = path.join(process.cwd(), "public", "apps-images")
 const IMAGE_FILE_PATTERN = /\.(png|jpe?g|webp|gif|avif|svg)$/i
@@ -22,7 +23,8 @@ async function getAppsImagePaths() {
 }
 
 export default async function AppsPage() {
-  const appsImages = await getAppsImagePaths()
+  const cmsData = await getCmsPublicData()
+  const appsImages = cmsData.galleries.apps.length > 0 ? cmsData.galleries.apps : await getAppsImagePaths()
   const cardsToRender = Math.max(appsImages.length, MIN_VISIBLE_CARDS)
 
   return (

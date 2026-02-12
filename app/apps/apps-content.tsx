@@ -47,7 +47,7 @@ export function AppsContent({ appsImages, cardsToRender }: AppsContentProps) {
                     sizes="(min-width: 768px) 25vw, 50vw"
                     className="block h-full w-full object-contain"
                     draggable={false}
-                    quality={72}
+                    quality={100}
                   />
                 ) : null}
               </article>

@@ -4,7 +4,8 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react"
 
-import { navItems, type NavKey } from "@/lib/studio-data"
+import { defaultCmsPublicData } from "@/lib/cms-types"
+import { type FolderTile, type NavItem, type NavKey } from "@/lib/studio-data"
 
 type StudioFrameProps = {
   backgroundClassName?: string
@@ -27,18 +28,30 @@ function normalizeCommand(value: string) {
   return value.trim().toLowerCase().replace(/\s+/g, " ")
 }
 
-const commandTargets: CommandTarget[] = [
-  { label: "HOME", href: "/", aliases: ["home"] },
-  { label: "BOOK A CALL", href: "https://cal.com/metagravity/design", external: true, aliases: ["book", "book a call"] },
-  { label: "PRINCIPLES", href: "/principles", aliases: ["principles", "dna"] },
-  { label: "EMAIL", href: "mailto:metagravity0@gmail.com", external: true, aliases: ["email", "mail"] },
-  { label: "#APPS", href: "/apps", aliases: ["#apps", "apps"] },
-  { label: "#SITES", href: "/sites", aliases: ["#sites", "sites", "website"] },
-  { label: "#LABS", href: "/labs", aliases: ["#labs", "labs"] },
-  { label: "#BRANDING", href: "/branding", aliases: ["#branding", "branding"] },
-  { label: "#TOOLS", href: "/tools", aliases: ["#tools", "tools", "products"] },
-  { label: "#START [↗]", href: "/start", aliases: ["#start", "start", "be next"] },
-]
+function buildAliasesFromLabel(label: string) {
+  const normalized = normalizeCommand(label)
+  const plain = normalized.replace(/[^a-z0-9#\s]/g, "").trim()
+  const noHash = plain.replace(/^#/, "").trim()
+  return Array.from(new Set([normalized, plain, noHash].filter(Boolean)))
+}
+
+function buildCommandTargets(currentNavItems: NavItem[], currentFolderTiles: FolderTile[]): CommandTarget[] {
+  const navTargets = currentNavItems.map((item) => ({
+    label: item.label,
+    href: item.href,
+    external: item.external,
+    aliases: buildAliasesFromLabel(item.label),
+  }))
+
+  const folderTargets = currentFolderTiles.map((item) => ({
+    label: item.label,
+    href: item.href,
+    external: item.external,
+    aliases: buildAliasesFromLabel(item.label),
+  }))
+
+  return [...navTargets, ...folderTargets]
+}
 
 function getActiveNav(pathname: string): NavKey {
   if (pathname === "/labs") return "labs"
@@ -60,6 +73,8 @@ export function StudioFrame({
   const pathname = usePathname()
   const router = useRouter()
   const activeKey = navOverride ?? getActiveNav(pathname)
+  const [currentNavItems, setCurrentNavItems] = useState(defaultCmsPublicData.navItems)
+  const [currentFolderTiles, setCurrentFolderTiles] = useState(defaultCmsPublicData.homeFolderTiles)
   const [isNavCollapsed, setIsNavCollapsed] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isCommandOpen, setIsCommandOpen] = useState(false)
@@ -80,6 +95,23 @@ export function StudioFrame({
   const frameStyle: CSSProperties = { backgroundColor: backgroundColor ?? "#ececec" }
 
   useEffect(() => {
+    const controller = new AbortController()
+
+    fetch("/api/cms/public", { cache: "no-store", signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) return null
+        return response.json() as Promise<{ navItems?: NavItem[]; homeFolderTiles?: FolderTile[] }>
+      })
+      .then((payload) => {
+        if (payload?.navItems?.length) setCurrentNavItems(payload.navItems)
+        if (payload?.homeFolderTiles?.length) setCurrentFolderTiles(payload.homeFolderTiles)
+      })
+      .catch(() => undefined)
+
+    return () => controller.abort()
+  }, [])
+
+  useEffect(() => {
     const threshold = 72
 
     const onScroll = (event: Event) => {
@@ -95,11 +127,12 @@ export function StudioFrame({
   }, [])
 
   const filteredCommands = useMemo(() => {
+    const commandTargets = buildCommandTargets(currentNavItems, currentFolderTiles)
     const normalized = normalizeCommand(commandQuery)
     if (!normalized) return commandTargets
 
     return commandTargets.filter((command) => command.aliases.some((alias) => normalizeCommand(alias).includes(normalized)))
-  }, [commandQuery])
+  }, [commandQuery, currentFolderTiles, currentNavItems])
 
   const runCommand = (command: CommandTarget) => {
     setIsCommandOpen(false)
@@ -114,6 +147,7 @@ export function StudioFrame({
   }
 
   const runExactCommandIfAny = (nextQuery: string) => {
+    const commandTargets = buildCommandTargets(currentNavItems, currentFolderTiles)
     const normalized = normalizeCommand(nextQuery)
     if (!normalized) return
 
@@ -158,7 +192,7 @@ export function StudioFrame({
           <nav
             className={`${isMobileMenuOpen ? "flex" : "hidden"} md:flex flex-col items-end gap-[10px] rounded-[2px] px-2 py-1 text-right font-mono text-[12px] uppercase tracking-[-0.02em] md:rounded-none md:bg-transparent md:px-0 md:py-0 ${isLightHeader ? "bg-black/30" : "bg-white/62"} ${navClassName ?? ""}`}
           >
-          {navItems.map((item, index) => {
+          {currentNavItems.map((item, index) => {
             const isActive = item.key === activeKey
             const baseOpacity = isActive ? 1 : isLightHeader ? 0.8 : 0.5
             const collapseIntoHome = !isMobileMenuOpen && isNavCollapsed && item.key !== "home"
