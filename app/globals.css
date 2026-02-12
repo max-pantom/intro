@@ -182,10 +182,6 @@
   transition: transform 320ms ease;
 }
 
-.pantom-logo-flip:hover {
-  animation: pantom-logo-flip 420ms ease both;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .pantom-card {
     transition: none;
