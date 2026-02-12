@@ -57,6 +57,12 @@ type ErrorDialog = {
   message: string
 }
 
+type TerminalLine = {
+  id: number
+  role: "user" | "assistant"
+  text: string
+}
+
 type GifWindowSeed = {
   id: number
   left: string
@@ -84,16 +90,20 @@ function pseudoRandom(seed: number) {
 function buildGifWindowSeeds(count: number) {
   return Array.from({ length: count }, (_, index) => {
     const id = index + 1
-    const left = Math.floor(pseudoRandom(id * 7.1) * 84)
-    const top = Math.floor(pseudoRandom(id * 11.7) * 82)
-    const width = 96 + Math.floor(pseudoRandom(id * 3.3) * 150)
-    const height = 58 + Math.floor(pseudoRandom(id * 5.9) * 96)
+    const left = -8 + pseudoRandom(id * 7.1) * 106
+    const top = -6 + pseudoRandom(id * 11.7) * 100
+    const baseWidth = 88 + Math.floor(pseudoRandom(id * 3.3) * 196)
+    const boostedWidth = pseudoRandom(id * 2.6) > 0.76 ? baseWidth + 86 : baseWidth
+    const width = Math.min(360, boostedWidth)
+    const baseHeight = 54 + Math.floor(pseudoRandom(id * 5.9) * 120)
+    const boostedHeight = pseudoRandom(id * 4.2) > 0.8 ? baseHeight + 48 : baseHeight
+    const height = Math.min(220, boostedHeight)
     const rotate = -8 + pseudoRandom(id * 9.4) * 16
 
     return {
       id,
-      left: `${left}%`,
-      top: `${top}%`,
+      left: `${left.toFixed(2)}%`,
+      top: `${top.toFixed(2)}%`,
       width,
       height,
       rotate,
@@ -214,7 +224,7 @@ function RetroGifWindow({ left, top, width, height, rotate, source, label }: Gif
       className="pointer-events-none absolute hidden border-2 border-[#0d0d0d] bg-[#c6c6c6] shadow-[inset_-1px_-1px_0_#0d0d0d,inset_1px_1px_0_#ffffff,2px_2px_0_#0d0d0d] md:block"
       style={{ left, top, width, transform: `rotate(${rotate}deg)` }}
     >
-      <div className="flex items-center justify-between border-b border-[#0d0d0d] bg-[#000080] px-1 py-0.5">
+      <div className="flex items-center justify-between border-b border-[#0d0d0d] bg-[#a10303] px-1 py-0.5">
         <span className="font-mono text-[8px] uppercase tracking-[0.06em] text-white">{label}</span>
         <span className="h-2 w-2 border border-[#0d0d0d] bg-[#c6c6c6]" />
       </div>
@@ -242,8 +252,17 @@ export function UnderConstructionPage({
   const gifWindowSeeds = useMemo(() => buildGifWindowSeeds(20), [])
   const [trail, setTrail] = useState<CursorPixel[]>([])
   const [errorDialogs, setErrorDialogs] = useState<ErrorDialog[]>([])
+  const [isTerminalOpen, setIsTerminalOpen] = useState(false)
+  const [terminalInput, setTerminalInput] = useState("")
+  const [terminalLines, setTerminalLines] = useState<TerminalLine[]>([
+    { id: 1, role: "assistant", text: "flippy online" },
+    { id: 2, role: "assistant", text: "press enter to send" },
+  ])
   const pixelIdRef = useRef(0)
   const errorIdRef = useRef(0)
+  const terminalLineRef = useRef(2)
+
+  const pickRandomResponse = () => closeErrorMessages[Math.floor(Math.random() * closeErrorMessages.length)]
 
   const spawnCloseError = (originX: number, originY: number) => {
     const message = closeErrorMessages[Math.floor(Math.random() * closeErrorMessages.length)]
@@ -264,31 +283,48 @@ export function UnderConstructionPage({
     spawnCloseError(event.clientX, event.clientY)
   }
 
+  const submitTerminalLine = () => {
+    const message = terminalInput.trim()
+    if (!message) return
+
+    const userId = terminalLineRef.current + 1
+    terminalLineRef.current = userId
+    const assistantId = terminalLineRef.current + 1
+    terminalLineRef.current = assistantId
+
+    setTerminalLines((current) => [
+      ...current.slice(-12),
+      { id: userId, role: "user", text: message },
+      { id: assistantId, role: "assistant", text: pickRandomResponse() },
+    ])
+    setTerminalInput("")
+  }
+
   useEffect(() => {
     let rafId = 0
     let lastX = -999
     let lastY = -999
 
     const spawnPixel = (x: number, y: number) => {
-      for (let index = 0; index < 3; index += 1) {
+      for (let index = 0; index < 2; index += 1) {
         const color = trailColors[Math.floor(Math.random() * trailColors.length)]
-        const size = 6 + Math.floor(Math.random() * 7)
-        const jitterX = (Math.random() - 0.5) * 26
-        const jitterY = (Math.random() - 0.5) * 26
+        const size = 3 + Math.floor(Math.random() * 3)
+        const jitterX = (Math.random() - 0.5) * 14
+        const jitterY = (Math.random() - 0.5) * 14
         const id = pixelIdRef.current + 1
         pixelIdRef.current = id
 
-        setTrail((current) => [...current.slice(-160), { id, x: x + jitterX, y: y + jitterY, color, size }])
+        setTrail((current) => [...current.slice(-90), { id, x: x + jitterX, y: y + jitterY, color, size }])
 
         window.setTimeout(() => {
           setTrail((current) => current.filter((pixel) => pixel.id !== id))
-        }, 920)
+        }, 620)
       }
     }
 
     const onPointerMove = (event: globalThis.PointerEvent) => {
       const movement = Math.abs(event.clientX - lastX) + Math.abs(event.clientY - lastY)
-      if (movement < 2) return
+      if (movement < 3) return
 
       lastX = event.clientX
       lastY = event.clientY
@@ -429,7 +465,6 @@ export function UnderConstructionPage({
               backgroundColor: pixel.color,
               opacity: Math.max(0.18, (index + 1) / trail.length),
               transform: "translate(-50%, -50%)",
-              boxShadow: `0 0 12px ${pixel.color}`,
             }}
           />
         ))}
@@ -466,6 +501,46 @@ export function UnderConstructionPage({
             </div>
           </div>
         ))}
+      </div>
+
+      <div className="fixed bottom-2 right-2 z-[140] flex flex-col items-end gap-2">
+        <button
+          type="button"
+          onClick={() => setIsTerminalOpen((value) => !value)}
+          className="flex items-center gap-2 border-2 border-[#0d0d0d] bg-[#c6c6c6] px-2 py-1 shadow-[inset_-1px_-1px_0_#0d0d0d,inset_1px_1px_0_#ffffff,2px_2px_0_#0d0d0d]"
+        >
+          <span className="font-mono text-[18px] leading-none">📎</span>
+          <span className="font-mono text-[10px] uppercase text-black">flippy</span>
+        </button>
+
+        {isTerminalOpen ? (
+          <div className="w-[260px] border-2 border-[#0d0d0d] bg-[#c6c6c6] shadow-[inset_-1px_-1px_0_#0d0d0d,inset_1px_1px_0_#ffffff,3px_3px_0_#0d0d0d]">
+            <div className="border-b border-[#0d0d0d] bg-[#000080] px-2 py-1 font-mono text-[10px] uppercase tracking-[0.06em] text-white">
+              flippy terminal
+            </div>
+            <div className="h-[110px] overflow-hidden bg-black px-2 py-1 font-mono text-[9px] text-[#72ff7a]">
+              {terminalLines.slice(-8).map((line) => (
+                <p key={line.id}>
+                  {line.role === "assistant" ? "flippy>" : "you>"} {line.text}
+                </p>
+              ))}
+            </div>
+            <form
+              onSubmit={(event) => {
+                event.preventDefault()
+                submitTerminalLine()
+              }}
+              className="border-t border-[#0d0d0d] bg-[#c6c6c6] p-1"
+            >
+              <input
+                value={terminalInput}
+                onChange={(event) => setTerminalInput(event.target.value)}
+                placeholder="type then press enter"
+                className="w-full border border-[#0d0d0d] bg-white px-1 py-0.5 font-mono text-[9px] text-black outline-none"
+              />
+            </form>
+          </div>
+        ) : null}
       </div>
     </StudioFrame>
   )
