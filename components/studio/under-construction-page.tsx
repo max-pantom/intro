@@ -88,16 +88,19 @@ function pseudoRandom(seed: number) {
 }
 
 function buildGifWindowSeeds(count: number) {
+  const hugeWindowIds = new Set([2, 7, 12, 18, 23, 27])
+
   return Array.from({ length: count }, (_, index) => {
     const id = index + 1
-    const left = -8 + pseudoRandom(id * 7.1) * 106
-    const top = -6 + pseudoRandom(id * 11.7) * 100
-    const baseWidth = 88 + Math.floor(pseudoRandom(id * 3.3) * 196)
-    const boostedWidth = pseudoRandom(id * 2.6) > 0.76 ? baseWidth + 86 : baseWidth
-    const width = Math.min(360, boostedWidth)
-    const baseHeight = 54 + Math.floor(pseudoRandom(id * 5.9) * 120)
-    const boostedHeight = pseudoRandom(id * 4.2) > 0.8 ? baseHeight + 48 : baseHeight
-    const height = Math.min(220, boostedHeight)
+    const left = -12 + pseudoRandom(id * 7.1) * 114
+    const top = -10 + pseudoRandom(id * 11.7) * 108
+    const isHuge = hugeWindowIds.has(id)
+    const width = isHuge
+      ? 320 + Math.floor(pseudoRandom(id * 3.3) * 180)
+      : 92 + Math.floor(pseudoRandom(id * 3.3) * 170)
+    const height = isHuge
+      ? Math.max(280, Math.min(520, width - 52 + Math.floor(pseudoRandom(id * 5.9) * 98)))
+      : 58 + Math.floor(pseudoRandom(id * 5.9) * 120)
     const rotate = -8 + pseudoRandom(id * 9.4) * 16
 
     return {
@@ -218,13 +221,37 @@ function FloatingWindow({ title, subtitle, className, desktopRotate = 0, onClose
   )
 }
 
-function RetroGifWindow({ left, top, width, height, rotate, source, label }: GifWindowSeed & { source: string; label: string }) {
+function RetroGifWindow({
+  left,
+  top,
+  width,
+  height,
+  rotate,
+  source,
+  label,
+  titleBarClassName = "bg-[#000080]",
+  interactive = false,
+  onClick,
+  onMouseEnter,
+  onMouseLeave,
+}: GifWindowSeed & {
+  source: string
+  label: string
+  titleBarClassName?: string
+  interactive?: boolean
+  onClick?: () => void
+  onMouseEnter?: () => void
+  onMouseLeave?: () => void
+}) {
   return (
     <div
-      className="pointer-events-none absolute hidden border-2 border-[#0d0d0d] bg-[#c6c6c6] shadow-[inset_-1px_-1px_0_#0d0d0d,inset_1px_1px_0_#ffffff,2px_2px_0_#0d0d0d] md:block"
+      className={`${interactive ? "pointer-events-auto cursor-pointer" : "pointer-events-none"} absolute hidden border-2 border-[#0d0d0d] bg-[#c6c6c6] shadow-[inset_-1px_-1px_0_#0d0d0d,inset_1px_1px_0_#ffffff,2px_2px_0_#0d0d0d] md:block`}
       style={{ left, top, width, transform: `rotate(${rotate}deg)` }}
+      onClick={onClick}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
     >
-      <div className="flex items-center justify-between border-b border-[#0d0d0d] bg-[#a10303] px-1 py-0.5">
+      <div className={`flex items-center justify-between border-b border-[#0d0d0d] px-1 py-0.5 ${titleBarClassName}`}>
         <span className="font-mono text-[8px] uppercase tracking-[0.06em] text-white">{label}</span>
         <span className="h-2 w-2 border border-[#0d0d0d] bg-[#c6c6c6]" />
       </div>
@@ -249,10 +276,13 @@ export function UnderConstructionPage({
   backLabel = "BACK HOME",
 }: UnderConstructionPageProps) {
   const livePreviewGif = "/lab-images/28.gif"
-  const gifWindowSeeds = useMemo(() => buildGifWindowSeeds(20), [])
+  const gifWindowSeeds = useMemo(() => buildGifWindowSeeds(28), [])
   const [trail, setTrail] = useState<CursorPixel[]>([])
   const [errorDialogs, setErrorDialogs] = useState<ErrorDialog[]>([])
   const [isTerminalOpen, setIsTerminalOpen] = useState(false)
+  const [isGif28Hovered, setIsGif28Hovered] = useState(false)
+  const [isGif28Alert, setIsGif28Alert] = useState(false)
+  const [desktopBgColor, setDesktopBgColor] = useState("#008081")
   const [terminalInput, setTerminalInput] = useState("")
   const [terminalLines, setTerminalLines] = useState<TerminalLine[]>([
     { id: 1, role: "assistant", text: "flippy online" },
@@ -281,6 +311,13 @@ export function UnderConstructionPage({
   const handleWindowCloseAttempt = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault()
     spawnCloseError(event.clientX, event.clientY)
+  }
+
+  const handleGif28Click = () => {
+    setDesktopBgColor((current) => (current === "#008081" ? "#bfbfbf" : "#008081"))
+    setIsGif28Alert(true)
+    spawnCloseError(window.innerWidth * 0.7, window.innerHeight * 0.35)
+    window.setTimeout(() => setIsGif28Alert(false), 900)
   }
 
   const submitTerminalLine = () => {
@@ -342,23 +379,33 @@ export function UnderConstructionPage({
   }, [])
 
   return (
-    <StudioFrame navOverride={navKey} backgroundColor="#f3f3f3">
+    <StudioFrame navOverride={navKey} backgroundColor={desktopBgColor}>
       <main className="relative h-full overflow-hidden px-4 pb-10 pt-24 md:px-8 md:pb-14 md:pt-28">
 
         <div className="relative mx-auto flex w-full max-w-[1320px] flex-col gap-4 md:block md:h-[980px]">
-          {gifWindowSeeds.map((seed) => (
-            <RetroGifWindow
-              key={seed.id}
-              id={seed.id}
-              left={seed.left}
-              top={seed.top}
-              width={seed.width}
-              height={seed.height}
-              rotate={seed.rotate}
-              source={livePreviewGif}
-              label={`gif 28 #${seed.id}`}
-            />
-          ))}
+          {gifWindowSeeds.map((seed) => {
+            const isSpecial28 = seed.id === 28
+            const specialTitleClass = isGif28Alert ? "bg-[#aa0000]" : isGif28Hovered ? "bg-[#2667f2]" : "bg-[#000080]"
+
+            return (
+              <RetroGifWindow
+                key={seed.id}
+                id={seed.id}
+                left={seed.left}
+                top={seed.top}
+                width={seed.width}
+                height={seed.height}
+                rotate={seed.rotate}
+                source={livePreviewGif}
+                label={`gif 28 #${seed.id}`}
+                interactive={isSpecial28}
+                titleBarClassName={isSpecial28 ? specialTitleClass : "bg-[#000080]"}
+                onClick={isSpecial28 ? handleGif28Click : undefined}
+                onMouseEnter={isSpecial28 ? () => setIsGif28Hovered(true) : undefined}
+                onMouseLeave={isSpecial28 ? () => setIsGif28Hovered(false) : undefined}
+              />
+            )
+          })}
 
           <section className="relative z-30 flex flex-col items-center gap-3 border-2 border-[#0d0d0d] bg-[#c6c6c6] px-5 py-7 text-center shadow-[inset_-1px_-1px_0_#0d0d0d,inset_1px_1px_0_#ffffff,4px_4px_0_#0d0d0d] md:absolute md:left-1/2 md:top-1/2 md:w-[560px] md:-translate-x-1/2 md:-translate-y-1/2 md:px-8 md:py-10">
             <div className="w-full border border-[#0d0d0d] bg-[#000080] px-2 py-1 text-left font-mono text-[10px] uppercase tracking-[0.08em] text-white">
