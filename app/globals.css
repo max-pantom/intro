@@ -167,6 +167,25 @@
   animation: pantom-blue-blink 1.2s ease-in-out infinite;
 }
 
+@keyframes pantom-logo-flip {
+  0% {
+    transform: rotateY(0deg);
+  }
+  100% {
+    transform: rotateY(180deg);
+  }
+}
+
+.pantom-logo-flip {
+  display: inline-block;
+  transform-style: preserve-3d;
+  transition: transform 320ms ease;
+}
+
+.pantom-logo-flip:hover {
+  animation: pantom-logo-flip 420ms ease both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .pantom-card {
     transition: none;
@@ -178,6 +197,11 @@
 
   .pantom-blue-blink {
     animation: none;
+  }
+
+  .pantom-logo-flip {
+    animation: none;
+    transition: none;
   }
 }
 
