@@ -3,6 +3,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import {
+  memo,
   useEffect,
   useMemo,
   useRef,
@@ -72,7 +73,7 @@ type GifWindowSeed = {
   rotate: number
 }
 
-const animatedGifIds = new Set([2, 5, 7, 11, 12, 18, 23, 27, 28])
+const animatedGifIds = new Set([7, 18, 23, 28])
 
 const trailColors = ["#00f5ff", "#ff4fd8", "#fff05f", "#7cff6b", "#8ea8ff", "#ffffff", "#ff9f40"]
 
@@ -272,7 +273,7 @@ function FloatingWindow({ title, subtitle, className, desktopRotate = 0, onClose
   )
 }
 
-function RetroGifWindow({
+const RetroGifWindow = memo(function RetroGifWindow({
   left,
   top,
   width,
@@ -408,7 +409,7 @@ function RetroGifWindow({
       )}
     </div>
   )
-}
+})
 
 export function UnderConstructionPage({
   navKey,
@@ -552,7 +553,7 @@ export function UnderConstructionPage({
             )
           })}
 
-          <section className="relative z-30 flex flex-col items-center gap-3 border-2 border-[#0d0d0d] bg-[#c6c6c6] px-5 py-7 text-center shadow-[inset_-1px_-1px_0_#0d0d0d,inset_1px_1px_0_#ffffff,4px_4px_0_#0d0d0d] md:absolute md:left-1/2 md:top-1/2 md:w-[560px] md:-translate-x-1/2 md:-translate-y-1/2 md:px-8 md:py-10">
+          <section className="relative z-30 flex flex-col items-center gap-3 border-2 border-[#0d0d0d] bg-[#c6c6c6] px-5 py-7 text-center shadow-[inset_-1px_-1px_0_#0d0d0d,inset_1px_1px_0_#ffffff,4px_4px_0_#0d0d0d] md:fixed md:left-1/2 md:top-1/2 md:w-[560px] md:-translate-x-1/2 md:-translate-y-1/2 md:px-8 md:py-10">
             <div className="w-full border border-[#0d0d0d] bg-[#000080] px-2 py-1 text-left font-mono text-[10px] uppercase tracking-[0.08em] text-white">
               C:\\{title.toLowerCase()}\\status.exe
             </div>
