@@ -133,7 +133,7 @@ function normalizeEvent(input: Partial<AnalyticsEvent>): AnalyticsEvent | null {
     itemType: sanitizeText(input.itemType, 80),
     value: toFiniteNumber(input.value),
     durationMs: Math.max(0, Math.round(toFiniteNumber(input.durationMs))),
-    isBot: Boolean(input.isBot ?? device === "bot" || botPattern.test(userAgent)),
+    isBot: Boolean(input.isBot ?? (device === "bot" || botPattern.test(userAgent))),
     meta: {
       referrer: sanitizeText(input.meta?.referrer, 700),
       referrerHost: sanitizeText(input.meta?.referrerHost, 180),
@@ -582,7 +582,7 @@ export async function getAnalyticsSummary(days = 14): Promise<AnalyticsSummary> 
     const landing = sessionEvents.find((event) => event.eventName === "page_view" && event.path === "/")
     const caseStudy = sessionEvents.find(
       (event) =>
-        (event.eventName === "page_view" && /^\/(apps|website|sites|labs)\/.test(event.path)) ||
+        (event.eventName === "page_view" && /^\/(apps|website|sites|labs)(\/|$)/.test(event.path)) ||
         (event.eventName === "section_view" && event.section.toLowerCase() === "case-studies"),
     )
     const contactView = sessionEvents.find((event) => event.eventName === "section_view" && event.section.toLowerCase() === "contact")
