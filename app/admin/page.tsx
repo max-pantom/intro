@@ -304,7 +304,7 @@ export default function AdminPage() {
 
   if (isLoading) {
     return (
-      <main className="flex min-h-dvh items-center justify-center bg-[#efefef] px-4">
+      <main className="pantom-scrollbar flex h-dvh items-center justify-center overflow-y-auto bg-[#efefef] px-4">
         <p className="font-mono text-[12px] uppercase tracking-[0.08em] text-[#7a7a7a]">Loading CMS...</p>
       </main>
     )
@@ -312,7 +312,7 @@ export default function AdminPage() {
 
   if (!isAuthenticated) {
     return (
-      <main className="flex min-h-dvh items-center justify-center bg-[#efefef] px-4 py-8">
+      <main className="pantom-scrollbar flex h-dvh overflow-y-auto items-center justify-center bg-[#efefef] px-4 py-8">
         <section className="w-full max-w-[700px] border border-[#d7d7d7] bg-[#f4f4f4] p-4">
           <div className="grid gap-3 sm:grid-cols-[230px_1fr]">
             <div className="flex items-center gap-3 border border-[#dcdcdc] bg-[#ececec] px-3 py-3">
@@ -353,7 +353,7 @@ export default function AdminPage() {
   }
 
   return (
-    <main className="pantom-scrollbar min-h-dvh overflow-y-auto bg-[#efefef] p-2 sm:p-3">
+    <main className="pantom-scrollbar h-dvh overflow-y-auto bg-[#efefef] p-2 sm:p-3">
       <section className="mx-auto w-full max-w-[1420px]">
         <div className="grid gap-3 lg:grid-cols-[230px_1fr]">
           <div className="flex items-center gap-3 border border-[#dbdbdb] bg-[#ececec] px-3 py-3">

@@ -114,12 +114,10 @@ export function StudioFrame({
   }, [])
 
   useEffect(() => {
-    const threshold = 72
-
     const onScroll = (event: Event) => {
       const target = event.target
       const scrollTop = target instanceof HTMLElement ? target.scrollTop : 0
-      const nextCollapsedState = scrollTop > threshold
+      const nextCollapsedState = scrollTop > 0
 
       setIsNavCollapsed((previousState) => (previousState === nextCollapsedState ? previousState : nextCollapsedState))
     }
@@ -198,7 +196,26 @@ export function StudioFrame({
     <div className={`relative h-dvh w-full overflow-hidden ${backgroundClassName ?? ""}`} style={frameStyle}>
       <header className={`pointer-events-none absolute left-0 right-0 top-0 z-20 flex items-start justify-between px-5 pt-5 ${headerClassName ?? ""}`}>
         <Link href="/" className={`pantom-logo-flip pointer-events-auto text-[24px] leading-none tracking-[-0.02em] ${logoTextColor}`}>
-          PANTOM
+          <span className="relative inline-flex h-[24px] min-w-[98px] items-center">
+            <span
+              className={`absolute left-0 top-1/2 -translate-y-1/2 transition-all duration-500 ease-out ${isNavCollapsed ? "translate-y-[-55%] scale-95 opacity-0" : "translate-y-[-50%] scale-100 opacity-100"}`}
+            >
+              PANTOM
+            </span>
+            <svg
+              width="121"
+              height="93"
+              viewBox="0 0 121 93"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              className={`absolute left-0 top-1/2 h-[20px] w-auto -translate-y-1/2 text-white mix-blend-difference transition-all duration-500 ease-out ${isNavCollapsed ? "translate-y-[-50%] scale-100 opacity-100" : "translate-y-[-45%] scale-95 opacity-0"}`}
+            >
+              <path
+                d="M53.6292 28.1593V0H67.154V28.1593L99.9914 0H120.783L78.6827 36.1023H116.776V49.6438H76.7173L119.93 92.9099H100.803L67.154 59.2192V92.9099H53.6292V59.2188L19.9795 92.9099H0.852642L44.0655 49.6438H4.00713V36.1023H42.1001L0 0H20.7914L53.6292 28.1593Z"
+                fill="currentColor"
+              />
+            </svg>
+          </span>
         </Link>
 
         <div className="pointer-events-auto relative flex flex-col items-end gap-2">

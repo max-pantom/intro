@@ -152,7 +152,7 @@ export default function AdminAnalyticsPage() {
 
   if (isLoading) {
     return (
-      <main className="flex min-h-dvh items-center justify-center bg-[#efefef] px-4">
+      <main className="analytics-scrollbar flex h-dvh items-center justify-center overflow-y-auto bg-[#efefef] px-4">
         <p className="font-mono text-[12px] uppercase tracking-[0.08em] text-[#7a7a7a]">Loading analytics...</p>
       </main>
     )
@@ -160,7 +160,7 @@ export default function AdminAnalyticsPage() {
 
   if (isUnauthorized) {
     return (
-      <main className="flex min-h-dvh items-center justify-center bg-[#efefef] px-4">
+      <main className="analytics-scrollbar flex h-dvh items-center justify-center overflow-y-auto bg-[#efefef] px-4 py-8">
         <section className="w-full max-w-[560px] border border-[#d7d7d7] bg-[#f4f4f4] p-5">
           <p className="text-[14px] font-semibold text-[#555555]">Unauthorized</p>
           <p className="mt-1 text-[12px] text-[#7b7b7b]">Login through the CMS admin page first.</p>

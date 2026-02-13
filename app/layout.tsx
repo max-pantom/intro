@@ -13,9 +13,50 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const siteTitle = "Pantom Portfolio";
+const siteDescription = "Pantom is a creative studio for design, development, branding, and MVP delivery.";
+
+function getMetadataBase() {
+  const raw = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (!raw) return new URL("http://localhost:3000");
+
+  const withProtocol = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+
+  try {
+    return new URL(withProtocol);
+  } catch {
+    return new URL("http://localhost:3000");
+  }
+}
+
 export const metadata: Metadata = {
-  title: "Pantom Portfolio",
-  description: "Pantom is a creative studio for design, development, branding, and MVP delivery.",
+  metadataBase: getMetadataBase(),
+  title: siteTitle,
+  description: siteDescription,
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    siteName: "Pantom",
+    title: siteTitle,
+    description: siteDescription,
+    url: "/",
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "Pantom",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: siteTitle,
+    description: siteDescription,
+    images: ["/twitter-image"],
+  },
 };
 
 export default function RootLayout({
