@@ -4,7 +4,7 @@ import { SectionHeading } from "./section-heading"
 
 export function CaseStudiesSection() {
   return (
-    <section id="case-studies" className="pantom-reveal space-y-8">
+    <section id="case-studies" data-analytics-section="case-studies" className="pantom-reveal space-y-8">
       <SectionHeading eyebrow="Case Studies" title="Story-led proof from product and brand engagements.">
         Each study traces challenge, strategic move, and measurable outcome.
       </SectionHeading>

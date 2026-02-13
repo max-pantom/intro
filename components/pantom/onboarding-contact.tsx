@@ -4,7 +4,7 @@ import { SectionHeading } from "./section-heading"
 
 export function OnboardingContactSection() {
   return (
-    <section id="contact" className="pantom-reveal space-y-8 border-t border-[#1f1a16]/20 pt-12 dark:border-[#e8dfd3]/20">
+    <section id="contact" data-analytics-section="contact" className="pantom-reveal space-y-8 border-t border-[#1f1a16]/20 pt-12 dark:border-[#e8dfd3]/20">
       <SectionHeading eyebrow="Onboarding" title="A clear contact flow that starts with context.">
         We keep the process lightweight while ensuring strategic clarity from day one.
       </SectionHeading>
@@ -30,6 +30,7 @@ export function OnboardingContactSection() {
           <div className="mt-6 flex flex-wrap gap-3 text-sm">
             <a
               href="mailto:hello@pantom.studio"
+              data-analytics-source="contact"
               className="rounded-full border border-current px-4 py-2 transition hover:-translate-y-0.5"
             >
               hello@pantom.studio
@@ -38,6 +39,7 @@ export function OnboardingContactSection() {
               href="https://cal.com"
               target="_blank"
               rel="noreferrer"
+              data-analytics-source="contact"
               className="rounded-full border border-current px-4 py-2 transition hover:-translate-y-0.5"
             >
               Book intro call

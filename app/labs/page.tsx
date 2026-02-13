@@ -35,7 +35,9 @@ export default async function LabsPage() {
       headerClassName="px-4 md:px-[22px]"
     >
       <main className="pantom-scrollbar h-full overflow-y-auto px-4 pb-4 pt-[200px] md:px-[22px] md:pb-7 md:pt-[286px]">
+        <div data-analytics-section="labs-gallery">
         <LabsContent labImages={labImages} />
+        </div>
 
         {labImages.length === 0 ? (
           <p className="pt-4 text-center font-mono text-[12px] tracking-[0.06em] text-[#ffd5d8]">Add images to `public/lab-images`.</p>

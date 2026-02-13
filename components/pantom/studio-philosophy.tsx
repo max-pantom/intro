@@ -4,7 +4,7 @@ import { SectionHeading } from "./section-heading"
 
 export function StudioPhilosophySection() {
   return (
-    <section id="studio" className="pantom-reveal space-y-8">
+    <section id="studio" data-analytics-section="studio" className="pantom-reveal space-y-8">
       <SectionHeading eyebrow="Studio" title="A community-driven model for modern product teams.">
         Pantom blends a core studio with a rotating community of writers, researchers, and product operators.
       </SectionHeading>

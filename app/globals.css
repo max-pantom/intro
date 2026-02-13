@@ -241,3 +241,32 @@
 .pantom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgb(22 22 22 / 0.52);
 }
+
+.analytics-scrollbar,
+.analytics-scrollbar * {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(110 110 110 / 0.6) rgb(170 170 170 / 0.18);
+}
+
+.analytics-scrollbar::-webkit-scrollbar,
+.analytics-scrollbar *::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.analytics-scrollbar::-webkit-scrollbar-track,
+.analytics-scrollbar *::-webkit-scrollbar-track {
+  background: rgb(175 175 175 / 0.18);
+  border-radius: 999px;
+}
+
+.analytics-scrollbar::-webkit-scrollbar-thumb,
+.analytics-scrollbar *::-webkit-scrollbar-thumb {
+  background: rgb(112 112 112 / 0.68);
+  border-radius: 999px;
+}
+
+.analytics-scrollbar::-webkit-scrollbar-thumb:hover,
+.analytics-scrollbar *::-webkit-scrollbar-thumb:hover {
+  background: rgb(95 95 95 / 0.82);
+}

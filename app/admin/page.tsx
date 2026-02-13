@@ -9,6 +9,15 @@ type Status = {
   message: string
 }
 
+type ContentRow = {
+  id: string
+  index: number
+  key: string
+  label: string
+  type: "nav" | "folder"
+  value: string
+}
+
 function cloneDefaults(): CmsPublicData {
   return {
     navItems: defaultCmsPublicData.navItems.map((item) => ({ ...item })),
@@ -21,6 +30,8 @@ function cloneDefaults(): CmsPublicData {
   }
 }
 
+const galleryOptions: GalleryKey[] = ["apps", "website", "labs"]
+
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [password, setPassword] = useState("")
@@ -32,12 +43,56 @@ export default function AdminPage() {
   const [hoveredPreviewPath, setHoveredPreviewPath] = useState<string | null>(null)
   const [previewPosition, setPreviewPosition] = useState({ x: 0, y: 0 })
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [checkedRows, setCheckedRows] = useState<string[]>([])
 
   const statusColor = useMemo(() => {
-    if (status.tone === "error") return "text-[#b90000]"
-    if (status.tone === "success") return "text-[#155a1f]"
-    return "text-black/55"
+    if (status.tone === "error") return "text-[#a9182d]"
+    if (status.tone === "success") return "text-[#126640]"
+    return "text-[#777777]"
   }, [status.tone])
+
+  const contentRows = useMemo<ContentRow[]>(() => {
+    const navRows = cmsData.navItems.map((item, index) => {
+      return {
+        id: `nav-${item.key}`,
+        index,
+        key: item.key,
+        label: item.label,
+        type: "nav" as const,
+        value: item.href,
+      }
+    })
+
+    const folderRows = cmsData.homeFolderTiles.map((item, index) => {
+      return {
+        id: `folder-${item.color}-${index}`,
+        index,
+        key: item.color,
+        label: item.label,
+        type: "folder" as const,
+        value: item.href,
+      }
+    })
+
+    return [...navRows, ...folderRows]
+  }, [cmsData.homeFolderTiles, cmsData.navItems])
+
+  const filteredRows = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase()
+    if (!query) return contentRows
+
+    return contentRows.filter((row) => {
+      return [row.label, row.value, row.key, row.type].some((field) => field.toLowerCase().includes(query))
+    })
+  }, [contentRows, searchQuery])
+
+  const toggleCheckedRow = (id: string) => {
+    setCheckedRows((current) => {
+      if (current.includes(id)) return current.filter((item) => item !== id)
+      return [...current, id]
+    })
+  }
 
   const loadAdminData = async () => {
     setIsLoading(true)
@@ -248,142 +303,197 @@ export default function AdminPage() {
   }
 
   if (isLoading) {
-    return <main className="flex min-h-dvh items-center justify-center font-mono text-[12px] uppercase tracking-[0.06em]">Loading CMS...</main>
+    return (
+      <main className="flex min-h-dvh items-center justify-center bg-[#efefef] px-4">
+        <p className="font-mono text-[12px] uppercase tracking-[0.08em] text-[#7a7a7a]">Loading CMS...</p>
+      </main>
+    )
   }
 
   if (!isAuthenticated) {
     return (
-      <main className="flex min-h-dvh items-center justify-center bg-[#ececec] px-4">
-        <section className="w-full max-w-[420px] border border-black/30 bg-white p-4">
-          <h1 className="font-mono text-[13px] uppercase tracking-[0.06em] text-black">Simple CMS Login</h1>
-          <p className="mt-1 font-mono text-[11px] text-black/60">Set `CMS_ADMIN_PASSWORD` in your env file.</p>
-          <input
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") login()
-            }}
-            placeholder="Password"
-            className="mt-3 w-full border border-black/30 px-2 py-1 font-mono text-[12px] outline-none"
-          />
-          <button
-            type="button"
-            onClick={login}
-            className="mt-3 w-full border border-black/40 bg-black px-2 py-1 font-mono text-[12px] uppercase tracking-[0.06em] text-white"
-          >
-            Login
-          </button>
-          {status.message ? <p className={`mt-2 font-mono text-[11px] ${statusColor}`}>{status.message}</p> : null}
+      <main className="flex min-h-dvh items-center justify-center bg-[#efefef] px-4 py-8">
+        <section className="w-full max-w-[700px] border border-[#d7d7d7] bg-[#f4f4f4] p-4">
+          <div className="grid gap-3 sm:grid-cols-[230px_1fr]">
+            <div className="flex items-center gap-3 border border-[#dcdcdc] bg-[#ececec] px-3 py-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#2f60d8] text-[12px] font-semibold text-white">MG</div>
+              <div>
+                <p className="font-semibold text-[18px] leading-none text-[#595959]">CMS</p>
+                <p className="text-[13px] text-[#9a9a9a]">admin@pantom.com</p>
+              </div>
+            </div>
+
+            <div className="border border-[#dcdcdc] bg-[#ececec] px-3 py-3">
+              <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#9a9a9a]">Search</p>
+              <input
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") login()
+                }}
+                placeholder="Password"
+                className="mt-2 h-9 w-full border border-[#d3d3d3] bg-[#f9f9f9] px-3 text-[13px] text-[#4b4b4b] outline-none"
+              />
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={login}
+                  className="h-8 border border-[#c6c6c6] bg-[#f9f9f9] px-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#666666]"
+                >
+                  Login
+                </button>
+                <p className={`text-[11px] ${statusColor}`}>{status.message || "Set CMS_ADMIN_PASSWORD in env."}</p>
+              </div>
+            </div>
+          </div>
         </section>
       </main>
     )
   }
 
   return (
-    <main className="pantom-scrollbar h-dvh overflow-y-auto bg-[#ececec] px-2 py-3 md:px-6">
-      <section className="mx-auto w-full max-w-[980px] border border-black/20 bg-white p-3 md:p-5">
-        <div className="sticky top-0 z-10 -mx-3 -mt-3 border-b border-black/15 bg-white px-3 py-3 md:static md:m-0 md:border-b-0 md:p-0">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="font-mono text-[13px] uppercase tracking-[0.08em] text-black">CMS Dashboard</h1>
-            <p className={`mt-1 font-mono text-[11px] ${statusColor}`}>{status.message || "Edit content, media, and save to publish."}</p>
+    <main className="pantom-scrollbar min-h-dvh overflow-y-auto bg-[#efefef] p-2 sm:p-3">
+      <section className="mx-auto w-full max-w-[1420px]">
+        <div className="grid gap-3 lg:grid-cols-[230px_1fr]">
+          <div className="flex items-center gap-3 border border-[#dbdbdb] bg-[#ececec] px-3 py-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#2f60d8] text-[12px] font-semibold text-white">MG</div>
+            <div>
+              <p className="font-semibold text-[24px] leading-none text-[#6c6c6c]">Metagravity</p>
+              <p className="text-[13px] text-[#9d9d9d]">metagravity@pantom.com</p>
+            </div>
           </div>
-          <div className="flex w-full items-center gap-2 sm:w-auto">
-            <button type="button" onClick={save} className="flex-1 border border-black/35 bg-black px-3 py-2 font-mono text-[11px] uppercase tracking-[0.06em] text-white sm:flex-none sm:py-1.5">
-              Save
-            </button>
-            <button type="button" onClick={logout} className="flex-1 border border-black/35 px-3 py-2 font-mono text-[11px] uppercase tracking-[0.06em] text-black sm:flex-none sm:py-1.5">
-              Logout
-            </button>
+
+          <div className="border border-[#dbdbdb] bg-[#ececec] px-3 py-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="SEARCH"
+                className="h-9 min-w-[220px] flex-1 border border-[#d4d4d4] bg-[#f2f2f2] px-3 text-[12px] font-semibold tracking-[0.04em] text-[#6f6f6f] outline-none placeholder:text-[#9f9f9f]"
+              />
+              <button
+                type="button"
+                onClick={save}
+                className="h-9 border border-[#c9c9c9] bg-[#f7f7f7] px-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#636363]"
+              >
+                Save
+              </button>
+              <a
+                href="/admin/analytics"
+                className="inline-flex h-9 items-center border border-[#c9c9c9] bg-[#f7f7f7] px-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#636363]"
+              >
+                Analytics
+              </a>
+              <button
+                type="button"
+                onClick={logout}
+                className="h-9 border border-[#c9c9c9] bg-[#f7f7f7] px-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#636363]"
+              >
+                Logout
+              </button>
+            </div>
+            <p className={`mt-2 text-[11px] ${statusColor}`}>{status.message || "Edit rows below and save to publish."}</p>
           </div>
         </div>
-        </div>
 
-        <div className="mt-3 grid gap-3 lg:grid-cols-[1fr_1fr_1.2fr]">
-          <section className="border border-black/15 p-3">
-            <h2 className="font-mono text-[11px] uppercase tracking-[0.06em] text-black/80">Header Nav</h2>
-            <div className="mt-2 space-y-2">
-              {cmsData.navItems.map((item, index) => (
-                <div key={item.key} className="border border-black/10 p-2">
-                  <p className="font-mono text-[10px] uppercase tracking-[0.06em] text-black/45">{item.key}</p>
+        <section className="mt-3 overflow-x-auto border border-[#dbdbdb] bg-[#ececec]">
+          <div className="min-w-[980px]">
+            <div className="grid grid-cols-[44px_54px_.8fr_.8fr_1.3fr_2fr] border-b border-[#d9d9d9] bg-[#ebebeb] text-[12px] font-semibold text-[#8b8b8b]">
+              <div className="border-r border-[#d9d9d9] px-3 py-3 text-center">#</div>
+              <div className="border-r border-[#d9d9d9] px-3 py-3 text-center">Sel</div>
+              <div className="border-r border-[#d9d9d9] px-3 py-3">Type</div>
+              <div className="border-r border-[#d9d9d9] px-3 py-3">Key</div>
+              <div className="border-r border-[#d9d9d9] px-3 py-3">Label</div>
+              <div className="px-3 py-3">Href</div>
+            </div>
+
+            {filteredRows.map((row, visualIndex) => (
+              <div key={row.id} className="grid grid-cols-[44px_54px_.8fr_.8fr_1.3fr_2fr] border-b border-[#dcdcdc] text-[12px] text-[#4f4f4f]">
+                <div className="border-r border-[#dedede] px-3 py-3 text-center font-semibold">{visualIndex + 1}</div>
+                <div className="border-r border-[#dedede] px-3 py-3 text-center">
                   <input
-                    value={item.label}
-                    onChange={(event) => {
-                      const next = [...cmsData.navItems]
-                      next[index] = { ...next[index], label: event.target.value }
-                      setCmsData({ ...cmsData, navItems: next })
-                    }}
-                    className="mt-1 w-full border border-black/20 px-2 py-1 font-mono text-[11px] outline-none"
-                  />
-                  <input
-                    value={item.href}
-                    onChange={(event) => {
-                      const next = [...cmsData.navItems]
-                      next[index] = { ...next[index], href: event.target.value }
-                      setCmsData({ ...cmsData, navItems: next })
-                    }}
-                    className="mt-1 w-full border border-black/20 px-2 py-1 font-mono text-[11px] outline-none"
+                    type="checkbox"
+                    checked={checkedRows.includes(row.id)}
+                    onChange={() => toggleCheckedRow(row.id)}
+                    className="h-3.5 w-3.5 accent-black"
                   />
                 </div>
-              ))}
-            </div>
-          </section>
+                <div className="border-r border-[#dedede] px-3 py-3 font-semibold uppercase text-[#616161]">{row.type}</div>
+                <div className="border-r border-[#dedede] px-3 py-3 font-semibold uppercase text-[#616161]">{row.key}</div>
+                <div className="border-r border-[#dedede] px-2 py-2">
+                  <input
+                    value={row.label}
+                    onChange={(event) => {
+                      if (row.type === "nav") {
+                        const next = [...cmsData.navItems]
+                        next[row.index] = { ...next[row.index], label: event.target.value }
+                        setCmsData({ ...cmsData, navItems: next })
+                        return
+                      }
 
-          <section className="border border-black/15 p-3">
-            <h2 className="font-mono text-[11px] uppercase tracking-[0.06em] text-black/80">Home Folders</h2>
-            <div className="mt-2 space-y-2">
-              {cmsData.homeFolderTiles.map((item, index) => (
-                <div key={`${item.color}-${index}`} className="border border-black/10 p-2">
-                  <p className="font-mono text-[10px] uppercase tracking-[0.06em] text-black/45">{item.color}</p>
-                  <input
-                    value={item.label}
-                    onChange={(event) => {
                       const next = [...cmsData.homeFolderTiles]
-                      next[index] = { ...next[index], label: event.target.value }
+                      next[row.index] = { ...next[row.index], label: event.target.value }
                       setCmsData({ ...cmsData, homeFolderTiles: next })
                     }}
-                    className="mt-1 w-full border border-black/20 px-2 py-1 font-mono text-[11px] outline-none"
-                  />
-                  <input
-                    value={item.href}
-                    onChange={(event) => {
-                      const next = [...cmsData.homeFolderTiles]
-                      next[index] = { ...next[index], href: event.target.value }
-                      setCmsData({ ...cmsData, homeFolderTiles: next })
-                    }}
-                    className="mt-1 w-full border border-black/20 px-2 py-1 font-mono text-[11px] outline-none"
+                    className="h-8 w-full border border-[#d8d8d8] bg-[#f8f8f8] px-2 text-[12px] font-semibold text-[#414141] outline-none"
                   />
                 </div>
-              ))}
-            </div>
-          </section>
+                <div className="px-2 py-2">
+                  <input
+                    value={row.value}
+                    onChange={(event) => {
+                      if (row.type === "nav") {
+                        const next = [...cmsData.navItems]
+                        next[row.index] = { ...next[row.index], href: event.target.value }
+                        setCmsData({ ...cmsData, navItems: next })
+                        return
+                      }
 
-          <section className="border border-black/15 p-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="font-mono text-[11px] uppercase tracking-[0.06em] text-black/80">Image Manager</h2>
-              <div className="flex items-center gap-1">
-                {(["apps", "website", "labs"] as GalleryKey[]).map((gallery) => (
+                      const next = [...cmsData.homeFolderTiles]
+                      next[row.index] = { ...next[row.index], href: event.target.value }
+                      setCmsData({ ...cmsData, homeFolderTiles: next })
+                    }}
+                    className="h-8 w-full border border-[#d8d8d8] bg-[#f8f8f8] px-2 text-[12px] font-semibold text-[#414141] outline-none"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="mt-3 border border-[#dbdbdb] bg-[#ececec] p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#858585]">Image Manager</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="inline-flex border border-[#d0d0d0] bg-[#f4f4f4]">
+                {galleryOptions.map((gallery) => (
                   <button
                     key={gallery}
                     type="button"
                     onClick={() => setActiveGallery(gallery)}
-                    className={`border px-2 py-1 font-mono text-[10px] uppercase ${activeGallery === gallery ? "border-black bg-black text-white" : "border-black/25 bg-white text-black/75"}`}
+                    className={`h-8 px-3 text-[11px] font-semibold uppercase tracking-[0.08em] ${activeGallery === gallery ? "bg-[#dfdfdf] text-[#3f3f3f]" : "text-[#747474]"}`}
                   >
                     {gallery}
                   </button>
                 ))}
               </div>
-            </div>
 
-            <div className="mt-2 flex flex-wrap gap-1">
-              <button type="button" onClick={autoFillGallery} className="border border-black/20 bg-white px-2 py-1 font-mono text-[10px] uppercase text-black/80">
+              <button
+                type="button"
+                onClick={autoFillGallery}
+                className="h-8 border border-[#c9c9c9] bg-[#f7f7f7] px-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#636363]"
+              >
                 Auto Fill
               </button>
-              <button type="button" onClick={sortSelectedGallery} className="border border-black/20 bg-white px-2 py-1 font-mono text-[10px] uppercase text-black/80">
+              <button
+                type="button"
+                onClick={sortSelectedGallery}
+                className="h-8 border border-[#c9c9c9] bg-[#f7f7f7] px-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#636363]"
+              >
                 Sort A-Z
               </button>
-              <label className="cursor-pointer border border-black/20 bg-white px-2 py-1 font-mono text-[10px] uppercase text-black/80">
+              <label className="inline-flex h-8 cursor-pointer items-center border border-[#c9c9c9] bg-[#f7f7f7] px-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#636363]">
                 Upload
                 <input
                   type="file"
@@ -399,71 +509,84 @@ export default function AdminPage() {
                 />
               </label>
             </div>
+          </div>
 
-            <div className="mt-2 grid gap-2 md:grid-cols-2">
-              <div className="border border-black/10 p-2">
-                <p className="font-mono text-[10px] uppercase tracking-[0.06em] text-black/45">Selected ({cmsData.galleries[activeGallery].length})</p>
-                <div className="pantom-scrollbar mt-2 max-h-[200px] space-y-1 overflow-y-auto">
-                  {cmsData.galleries[activeGallery].map((path, index) => (
-                    <div
-                      key={`${path}-${index}`}
-                      draggable
-                      onDragStart={() => setDraggedIndex(index)}
-                      onDragEnd={() => setDraggedIndex(null)}
-                      onDragOver={(event) => event.preventDefault()}
-                      onDrop={(event) => {
-                        event.preventDefault()
-                        if (draggedIndex !== null) {
-                          moveGalleryImageToIndex(draggedIndex, index)
-                        }
-                        setDraggedIndex(null)
-                      }}
-                      className={`flex items-center gap-1 border border-black/10 px-1 py-1 ${draggedIndex === index ? "opacity-50" : "opacity-100"}`}
+          <div className="mt-3 grid gap-3 lg:grid-cols-2">
+            <div className="border border-[#d7d7d7] bg-[#f1f1f1]">
+              <div className="grid grid-cols-[44px_1fr_110px] border-b border-[#d9d9d9] bg-[#ebebeb] text-[12px] font-semibold text-[#8b8b8b]">
+                <div className="border-r border-[#d9d9d9] px-3 py-2 text-center">#</div>
+                <div className="border-r border-[#d9d9d9] px-3 py-2">Selected ({cmsData.galleries[activeGallery].length})</div>
+                <div className="px-3 py-2">Actions</div>
+              </div>
+
+              <div className="pantom-scrollbar max-h-[320px] overflow-y-auto">
+                {cmsData.galleries[activeGallery].map((path, index) => (
+                  <div
+                    key={`${path}-${index}`}
+                    draggable
+                    onDragStart={() => setDraggedIndex(index)}
+                    onDragEnd={() => setDraggedIndex(null)}
+                    onDragOver={(event) => event.preventDefault()}
+                    onDrop={(event) => {
+                      event.preventDefault()
+                      if (draggedIndex !== null) {
+                        moveGalleryImageToIndex(draggedIndex, index)
+                      }
+                      setDraggedIndex(null)
+                    }}
+                    className={`grid grid-cols-[44px_1fr_110px] border-b border-[#dfdfdf] text-[11px] text-[#4d4d4d] ${draggedIndex === index ? "opacity-50" : "opacity-100"}`}
+                    onMouseEnter={(event) => handlePreviewMove(event, path)}
+                    onMouseMove={(event) => handlePreviewMove(event, path)}
+                    onMouseLeave={() => setHoveredPreviewPath(null)}
+                  >
+                    <div className="border-r border-[#dfdfdf] px-3 py-2 text-center font-semibold">{index + 1}</div>
+                    <div className="truncate border-r border-[#dfdfdf] px-3 py-2">{path}</div>
+                    <div className="flex items-center gap-1 px-2 py-1.5">
+                      <button type="button" onClick={() => moveGalleryImage(index, -1)} className="h-6 w-6 border border-[#cfcfcf] bg-[#f7f7f7] text-[11px]">-</button>
+                      <button type="button" onClick={() => moveGalleryImage(index, 1)} className="h-6 w-6 border border-[#cfcfcf] bg-[#f7f7f7] text-[11px]">+</button>
+                      <button type="button" onClick={() => removeGalleryImage(path)} className="h-6 w-6 border border-[#cfcfcf] bg-[#f7f7f7] text-[11px]">x</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="border border-[#d7d7d7] bg-[#f1f1f1]">
+              <div className="grid grid-cols-[44px_1fr_80px] border-b border-[#d9d9d9] bg-[#ebebeb] text-[12px] font-semibold text-[#8b8b8b]">
+                <div className="border-r border-[#d9d9d9] px-3 py-2 text-center">#</div>
+                <div className="border-r border-[#d9d9d9] px-3 py-2">Available ({galleryFiles.length})</div>
+                <div className="px-3 py-2">Add</div>
+              </div>
+
+              <div className="pantom-scrollbar max-h-[320px] overflow-y-auto">
+                {galleryFiles.map((path, index) => {
+                  const isSelected = cmsData.galleries[activeGallery].includes(path)
+                  return (
+                    <button
+                      key={path}
+                      type="button"
+                      onClick={() => addGalleryImage(path)}
                       onMouseEnter={(event) => handlePreviewMove(event, path)}
                       onMouseMove={(event) => handlePreviewMove(event, path)}
                       onMouseLeave={() => setHoveredPreviewPath(null)}
+                      disabled={isSelected}
+                      className="grid w-full grid-cols-[44px_1fr_80px] border-b border-[#dfdfdf] text-left text-[11px] text-[#4d4d4d] disabled:opacity-45"
                     >
-                      <span className="border border-black/20 px-1 font-mono text-[10px] text-black/60">drag</span>
-                      <button type="button" onClick={() => moveGalleryImage(index, -1)} className="border border-black/20 px-1 font-mono text-[10px]">-</button>
-                      <button type="button" onClick={() => moveGalleryImage(index, 1)} className="border border-black/20 px-1 font-mono text-[10px]">+</button>
-                      <span className="truncate font-mono text-[10px] text-black/70">{path}</span>
-                      <button type="button" onClick={() => removeGalleryImage(path)} className="ml-auto border border-black/20 px-1 font-mono text-[10px]">x</button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="border border-black/10 p-2">
-                <p className="font-mono text-[10px] uppercase tracking-[0.06em] text-black/45">Available ({galleryFiles.length})</p>
-                <div className="pantom-scrollbar mt-2 max-h-[200px] space-y-1 overflow-y-auto">
-                  {galleryFiles.map((path) => {
-                    const isSelected = cmsData.galleries[activeGallery].includes(path)
-                    return (
-                      <button
-                        key={path}
-                        type="button"
-                        onClick={() => addGalleryImage(path)}
-                        onMouseEnter={(event) => handlePreviewMove(event, path)}
-                        onMouseMove={(event) => handlePreviewMove(event, path)}
-                        onMouseLeave={() => setHoveredPreviewPath(null)}
-                        disabled={isSelected}
-                        className="flex w-full items-center gap-2 border border-black/10 px-1 py-1 text-left disabled:opacity-45"
-                      >
-                        <span className="truncate font-mono text-[10px] text-black/70">{path}</span>
-                        <span className="ml-auto border border-black/20 px-1 font-mono text-[10px]">{isSelected ? "ok" : "+"}</span>
-                      </button>
-                    )
-                  })}
-                </div>
+                      <div className="border-r border-[#dfdfdf] px-3 py-2 text-center font-semibold">{index + 1}</div>
+                      <div className="truncate border-r border-[#dfdfdf] px-3 py-2">{path}</div>
+                      <div className="px-3 py-2 font-semibold">{isSelected ? "ok" : "+"}</div>
+                    </button>
+                  )
+                })}
               </div>
             </div>
-          </section>
-        </div>
+          </div>
+        </section>
       </section>
 
       {hoveredPreviewPath ? (
         <div
-          className="pointer-events-none fixed z-50 border border-black/25 bg-white p-1 shadow-[0_12px_28px_rgba(0,0,0,0.2)]"
+          className="pointer-events-none fixed z-50 border border-[#d2d2d2] bg-[#fbfbfb] p-1 shadow-[0_8px_24px_rgba(0,0,0,0.16)]"
           style={{ left: `${previewPosition.x}px`, top: `${previewPosition.y}px` }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
