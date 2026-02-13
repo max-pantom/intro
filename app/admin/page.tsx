@@ -9,6 +9,18 @@ type Status = {
   message: string
 }
 
+type ContentRow = {
+  amountSpent: string
+  id: string
+  index: number
+  label: string
+  scarcity: string
+  ticket: string
+  tokenUsed: string
+  type: "nav" | "folder"
+  value: string
+}
+
 function cloneDefaults(): CmsPublicData {
   return {
     navItems: defaultCmsPublicData.navItems.map((item) => ({ ...item })),
@@ -34,18 +46,68 @@ export default function AdminPage() {
   const [hoveredPreviewPath, setHoveredPreviewPath] = useState<string | null>(null)
   const [previewPosition, setPreviewPosition] = useState({ x: 0, y: 0 })
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [checkedRows, setCheckedRows] = useState<string[]>([])
 
   const statusColor = useMemo(() => {
     if (status.tone === "error") return "text-[#a9182d]"
     if (status.tone === "success") return "text-[#126640]"
-    return "text-black/58"
+    return "text-[#777777]"
   }, [status.tone])
 
-  const statusBadgeClass = useMemo(() => {
-    if (status.tone === "error") return "border-[#a9182d]/28 bg-[#a9182d]/7 text-[#8f1325]"
-    if (status.tone === "success") return "border-[#126640]/25 bg-[#126640]/8 text-[#0f5536]"
-    return "border-black/15 bg-black/5 text-black/62"
-  }, [status.tone])
+  const tableDate = useMemo(() => {
+    return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date()).replace(/\//g, "-")
+  }, [])
+
+  const contentRows = useMemo<ContentRow[]>(() => {
+    const navRows = cmsData.navItems.map((item, index) => {
+      const tokenUsed = (item.label.length + item.href.length) * 1000
+      return {
+        amountSpent: "$" + (tokenUsed / 9.7).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+        id: `nav-${item.key}`,
+        index,
+        label: item.label,
+        scarcity: `${index + 1}/${cmsData.navItems.length}`,
+        ticket: item.key.toUpperCase(),
+        tokenUsed: tokenUsed.toLocaleString(),
+        type: "nav" as const,
+        value: item.href,
+      }
+    })
+
+    const folderRows = cmsData.homeFolderTiles.map((item, index) => {
+      const tokenUsed = (item.label.length + item.href.length) * 1000
+      return {
+        amountSpent: "$" + (tokenUsed / 8.4).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+        id: `folder-${item.color}-${index}`,
+        index,
+        label: item.label,
+        scarcity: `${index + 1}/${cmsData.homeFolderTiles.length}`,
+        ticket: item.color.toUpperCase(),
+        tokenUsed: tokenUsed.toLocaleString(),
+        type: "folder" as const,
+        value: item.href,
+      }
+    })
+
+    return [...navRows, ...folderRows]
+  }, [cmsData.homeFolderTiles, cmsData.navItems])
+
+  const filteredRows = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase()
+    if (!query) return contentRows
+
+    return contentRows.filter((row) => {
+      return [row.label, row.value, row.ticket, row.type].some((field) => field.toLowerCase().includes(query))
+    })
+  }, [contentRows, searchQuery])
+
+  const toggleCheckedRow = (id: string) => {
+    setCheckedRows((current) => {
+      if (current.includes(id)) return current.filter((item) => item !== id)
+      return [...current, id]
+    })
+  }
 
   const loadAdminData = async () => {
     setIsLoading(true)
@@ -257,51 +319,48 @@ export default function AdminPage() {
 
   if (isLoading) {
     return (
-      <main className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-[linear-gradient(135deg,#efefed_0%,#d8d8d5_100%)] px-4">
-        <div className="pointer-events-none absolute left-[-9rem] top-[-8rem] h-[20rem] w-[20rem] rounded-full bg-[#0e3fcb]/12 blur-3xl" />
-        <div className="pointer-events-none absolute bottom-[-10rem] right-[-8rem] h-[22rem] w-[22rem] rounded-full bg-[#f0ab65]/16 blur-3xl" />
-        <div className="relative rounded-[18px] border border-black/14 bg-white/76 px-7 py-4 shadow-[0_24px_65px_rgba(18,18,18,0.16)] backdrop-blur">
-          <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-black/68">Loading CMS Workspace...</p>
-        </div>
+      <main className="flex min-h-dvh items-center justify-center bg-[#efefef] px-4">
+        <p className="font-mono text-[12px] uppercase tracking-[0.08em] text-[#7a7a7a]">Loading CMS...</p>
       </main>
     )
   }
 
   if (!isAuthenticated) {
     return (
-      <main className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-[linear-gradient(130deg,#efefec_0%,#d7d6d4_56%,#cecfc9_100%)] px-4 py-8">
-        <div className="pointer-events-none absolute left-[-8rem] top-[6%] h-[20rem] w-[20rem] rounded-full bg-[#0d47d6]/14 blur-3xl" />
-        <div className="pointer-events-none absolute bottom-[-9rem] right-[-7rem] h-[20rem] w-[20rem] rounded-full bg-[#121212]/10 blur-3xl" />
+      <main className="flex min-h-dvh items-center justify-center bg-[#efefef] px-4 py-8">
+        <section className="w-full max-w-[700px] border border-[#d7d7d7] bg-[#f4f4f4] p-4">
+          <div className="grid gap-3 sm:grid-cols-[230px_1fr]">
+            <div className="flex items-center gap-3 border border-[#dcdcdc] bg-[#ececec] px-3 py-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#2f60d8] text-[12px] font-semibold text-white">MG</div>
+              <div>
+                <p className="font-semibold text-[18px] leading-none text-[#595959]">CMS</p>
+                <p className="text-[13px] text-[#9a9a9a]">admin@pantom.com</p>
+              </div>
+            </div>
 
-        <section className="relative w-full max-w-[470px] overflow-hidden rounded-[22px] border border-black/20 bg-[#f8f8f6] shadow-[0_30px_72px_rgba(0,0,0,0.2)]">
-          <div className="h-3 bg-[linear-gradient(90deg,#0c43c0_0%,#2a65ea_38%,#f8f8f6_100%)]" />
-
-          <div className="px-6 py-7 sm:px-8 sm:py-8">
-            <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-black/54">Studio / CMS</p>
-            <h1 className="mt-2 font-mono text-[24px] leading-none tracking-[-0.04em] text-black">Admin Login</h1>
-            <p className="mt-3 max-w-[32ch] font-mono text-[11px] leading-relaxed text-black/65">Use your CMS password to edit navigation labels, folder links, and gallery order.</p>
-            <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.08em] text-black/45">`CMS_ADMIN_PASSWORD` must be set in your environment.</p>
-
-            <input
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") login()
-              }}
-              placeholder="Password"
-              className="mt-5 w-full rounded-[10px] border border-black/18 bg-white px-3 py-2.5 font-mono text-[12px] text-black outline-none transition focus:border-black/40"
-            />
-
-            <button
-              type="button"
-              onClick={login}
-              className="mt-3 inline-flex h-10 w-full items-center justify-center rounded-[10px] border border-black/35 bg-black font-mono text-[11px] uppercase tracking-[0.09em] text-white transition hover:bg-black/90"
-            >
-              Login
-            </button>
-
-            <p className={`mt-3 min-h-4 font-mono text-[11px] ${statusColor}`}>{status.message || " "}</p>
+            <div className="border border-[#dcdcdc] bg-[#ececec] px-3 py-3">
+              <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#9a9a9a]">Search</p>
+              <input
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") login()
+                }}
+                placeholder="Password"
+                className="mt-2 h-9 w-full border border-[#d3d3d3] bg-[#f9f9f9] px-3 text-[13px] text-[#4b4b4b] outline-none"
+              />
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={login}
+                  className="h-8 border border-[#c6c6c6] bg-[#f9f9f9] px-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#666666]"
+                >
+                  Login
+                </button>
+                <p className={`text-[11px] ${statusColor}`}>{status.message || "Set CMS_ADMIN_PASSWORD in env."}</p>
+              </div>
+            </div>
           </div>
         </section>
       </main>
@@ -309,147 +368,149 @@ export default function AdminPage() {
   }
 
   return (
-    <main className="pantom-scrollbar relative h-dvh overflow-y-auto bg-[linear-gradient(125deg,#efefec_0%,#dddcd8_64%,#d0d1cd_100%)] px-3 py-4 md:px-8 md:py-8">
-      <div className="pointer-events-none absolute left-[-11rem] top-[-10rem] h-[24rem] w-[24rem] rounded-full bg-[#1147ca]/10 blur-3xl" />
-      <div className="pointer-events-none absolute bottom-[-11rem] right-[-9rem] h-[24rem] w-[24rem] rounded-full bg-[#0d0d0d]/8 blur-3xl" />
-
-      <section className="relative mx-auto w-full max-w-[1260px]">
-        <div className="sticky top-3 z-20 rounded-[18px] border border-black/18 bg-[#f7f7f5]/95 px-4 py-4 shadow-[0_20px_40px_rgba(0,0,0,0.14)] backdrop-blur md:px-6 md:py-5">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+    <main className="pantom-scrollbar min-h-dvh overflow-y-auto bg-[#efefef] p-2 sm:p-3">
+      <section className="mx-auto w-full max-w-[1420px]">
+        <div className="grid gap-3 lg:grid-cols-[230px_1fr]">
+          <div className="flex items-center gap-3 border border-[#dbdbdb] bg-[#ececec] px-3 py-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#2f60d8] text-[12px] font-semibold text-white">MG</div>
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-black/52">Studio / Content Manager</p>
-              <h1 className="mt-1 font-mono text-[24px] leading-none tracking-[-0.04em] text-black md:text-[28px]">CMS Dashboard</h1>
-              <p className={`mt-2 font-mono text-[11px] ${statusColor}`}>{status.message || "Edit content and media, then save to publish."}</p>
+              <p className="font-semibold text-[24px] leading-none text-[#6c6c6c]">Metagravity</p>
+              <p className="text-[13px] text-[#9d9d9d]">metagravity@pantom.com</p>
             </div>
+          </div>
 
-            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-              <span className={`inline-flex items-center justify-center rounded-full border px-3 py-1 font-mono text-[10px] uppercase tracking-[0.09em] ${statusBadgeClass}`}>
-                {status.tone === "idle" ? "Ready" : status.tone}
-              </span>
+          <div className="border border-[#dbdbdb] bg-[#ececec] px-3 py-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="SEARCH"
+                className="h-9 min-w-[220px] flex-1 border border-[#d4d4d4] bg-[#f2f2f2] px-3 text-[12px] font-semibold tracking-[0.04em] text-[#6f6f6f] outline-none placeholder:text-[#9f9f9f]"
+              />
               <button
                 type="button"
                 onClick={save}
-                className="inline-flex h-9 items-center justify-center rounded-[10px] border border-black/35 bg-black px-4 font-mono text-[11px] uppercase tracking-[0.08em] text-white transition hover:bg-black/88"
+                className="h-9 border border-[#c9c9c9] bg-[#f7f7f7] px-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#636363]"
               >
-                Save Changes
+                Save
               </button>
               <button
                 type="button"
                 onClick={logout}
-                className="inline-flex h-9 items-center justify-center rounded-[10px] border border-black/28 bg-white px-4 font-mono text-[11px] uppercase tracking-[0.08em] text-black/82 transition hover:bg-black/3"
+                className="h-9 border border-[#c9c9c9] bg-[#f7f7f7] px-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#636363]"
               >
                 Logout
               </button>
             </div>
+            <p className={`mt-2 text-[11px] ${statusColor}`}>{status.message || "Edit rows below and save to publish."}</p>
           </div>
         </div>
 
-        <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.4fr)] xl:items-start">
-          <section className="rounded-[18px] border border-black/18 bg-[#f8f8f6] p-4 shadow-[0_15px_36px_rgba(0,0,0,0.12)] md:p-5">
-            <div className="flex items-center justify-between gap-2">
-              <h2 className="font-mono text-[11px] uppercase tracking-[0.1em] text-black/82">Header Nav</h2>
-              <span className="rounded-full border border-black/15 bg-black/4 px-2 py-0.5 font-mono text-[10px] text-black/60">{cmsData.navItems.length}</span>
+        <section className="mt-3 overflow-x-auto border border-[#dbdbdb] bg-[#ececec]">
+          <div className="min-w-[1150px]">
+            <div className="grid grid-cols-[44px_54px_1.2fr_1.7fr_1fr_1fr_1.1fr_1.1fr_.7fr_.9fr] border-b border-[#d9d9d9] bg-[#ebebeb] text-[12px] font-semibold text-[#8b8b8b]">
+              <div className="border-r border-[#d9d9d9] px-3 py-3 text-center">#</div>
+              <div className="border-r border-[#d9d9d9] px-3 py-3 text-center">Sel</div>
+              <div className="border-r border-[#d9d9d9] px-3 py-3">Name</div>
+              <div className="border-r border-[#d9d9d9] px-3 py-3">Email</div>
+              <div className="border-r border-[#d9d9d9] px-3 py-3">Token Used</div>
+              <div className="border-r border-[#d9d9d9] px-3 py-3">Amount spent</div>
+              <div className="border-r border-[#d9d9d9] px-3 py-3">Ticket</div>
+              <div className="border-r border-[#d9d9d9] px-3 py-3">Summary</div>
+              <div className="border-r border-[#d9d9d9] px-3 py-3">Scarcity</div>
+              <div className="px-3 py-3">Date</div>
             </div>
 
-            <div className="mt-3 space-y-2.5">
-              {cmsData.navItems.map((item, index) => (
-                <article key={item.key} className="rounded-[12px] border border-black/12 bg-white/82 p-2.5">
-                  <p className="font-mono text-[10px] uppercase tracking-[0.09em] text-black/45">{item.key}</p>
+            {filteredRows.map((row, visualIndex) => (
+              <div key={row.id} className="grid grid-cols-[44px_54px_1.2fr_1.7fr_1fr_1fr_1.1fr_1.1fr_.7fr_.9fr] border-b border-[#dcdcdc] text-[12px] text-[#4f4f4f]">
+                <div className="border-r border-[#dedede] px-3 py-3 text-center font-semibold">{visualIndex + 1}</div>
+                <div className="border-r border-[#dedede] px-3 py-3 text-center">
                   <input
-                    value={item.label}
-                    onChange={(event) => {
-                      const next = [...cmsData.navItems]
-                      next[index] = { ...next[index], label: event.target.value }
-                      setCmsData({ ...cmsData, navItems: next })
-                    }}
-                    className="mt-1.5 w-full rounded-[9px] border border-black/16 bg-white px-3 py-2 font-mono text-[11px] text-black/86 outline-none transition focus:border-black/38"
-                    placeholder="Label"
+                    type="checkbox"
+                    checked={checkedRows.includes(row.id)}
+                    onChange={() => toggleCheckedRow(row.id)}
+                    className="h-3.5 w-3.5 accent-black"
                   />
+                </div>
+                <div className="border-r border-[#dedede] px-2 py-2">
                   <input
-                    value={item.href}
+                    value={row.label}
                     onChange={(event) => {
-                      const next = [...cmsData.navItems]
-                      next[index] = { ...next[index], href: event.target.value }
-                      setCmsData({ ...cmsData, navItems: next })
-                    }}
-                    className="mt-1.5 w-full rounded-[9px] border border-black/16 bg-white px-3 py-2 font-mono text-[11px] text-black/86 outline-none transition focus:border-black/38"
-                    placeholder="Href"
-                  />
-                </article>
-              ))}
-            </div>
-          </section>
+                      if (row.type === "nav") {
+                        const next = [...cmsData.navItems]
+                        next[row.index] = { ...next[row.index], label: event.target.value }
+                        setCmsData({ ...cmsData, navItems: next })
+                        return
+                      }
 
-          <section className="rounded-[18px] border border-black/18 bg-[#f8f8f6] p-4 shadow-[0_15px_36px_rgba(0,0,0,0.12)] md:p-5">
-            <div className="flex items-center justify-between gap-2">
-              <h2 className="font-mono text-[11px] uppercase tracking-[0.1em] text-black/82">Home Folders</h2>
-              <span className="rounded-full border border-black/15 bg-black/4 px-2 py-0.5 font-mono text-[10px] text-black/60">{cmsData.homeFolderTiles.length}</span>
-            </div>
-
-            <div className="mt-3 space-y-2.5">
-              {cmsData.homeFolderTiles.map((item, index) => (
-                <article key={`${item.color}-${index}`} className="rounded-[12px] border border-black/12 bg-white/82 p-2.5">
-                  <p className="font-mono text-[10px] uppercase tracking-[0.09em] text-black/45">{item.color}</p>
-                  <input
-                    value={item.label}
-                    onChange={(event) => {
                       const next = [...cmsData.homeFolderTiles]
-                      next[index] = { ...next[index], label: event.target.value }
+                      next[row.index] = { ...next[row.index], label: event.target.value }
                       setCmsData({ ...cmsData, homeFolderTiles: next })
                     }}
-                    className="mt-1.5 w-full rounded-[9px] border border-black/16 bg-white px-3 py-2 font-mono text-[11px] text-black/86 outline-none transition focus:border-black/38"
-                    placeholder="Label"
+                    className="h-8 w-full border border-[#d8d8d8] bg-[#f8f8f8] px-2 text-[12px] font-semibold text-[#414141] outline-none"
                   />
+                </div>
+                <div className="border-r border-[#dedede] px-2 py-2">
                   <input
-                    value={item.href}
+                    value={row.value}
                     onChange={(event) => {
+                      if (row.type === "nav") {
+                        const next = [...cmsData.navItems]
+                        next[row.index] = { ...next[row.index], href: event.target.value }
+                        setCmsData({ ...cmsData, navItems: next })
+                        return
+                      }
+
                       const next = [...cmsData.homeFolderTiles]
-                      next[index] = { ...next[index], href: event.target.value }
+                      next[row.index] = { ...next[row.index], href: event.target.value }
                       setCmsData({ ...cmsData, homeFolderTiles: next })
                     }}
-                    className="mt-1.5 w-full rounded-[9px] border border-black/16 bg-white px-3 py-2 font-mono text-[11px] text-black/86 outline-none transition focus:border-black/38"
-                    placeholder="Href"
+                    className="h-8 w-full border border-[#d8d8d8] bg-[#f8f8f8] px-2 text-[12px] font-semibold text-[#414141] outline-none"
                   />
-                </article>
-              ))}
-            </div>
-          </section>
+                </div>
+                <div className="border-r border-[#dedede] px-3 py-3 font-semibold">{row.tokenUsed}</div>
+                <div className="border-r border-[#dedede] px-3 py-3 font-semibold">{row.amountSpent}</div>
+                <div className="border-r border-[#dedede] px-3 py-3 font-semibold">{row.ticket}</div>
+                <div className="border-r border-[#dedede] px-3 py-3 font-semibold">{row.type === "nav" ? "Navigation item" : "Home folder tile"}</div>
+                <div className="border-r border-[#dedede] px-3 py-3 font-semibold">{row.scarcity}</div>
+                <div className="px-3 py-3 font-semibold">{tableDate}</div>
+              </div>
+            ))}
+          </div>
+        </section>
 
-          <section className="rounded-[18px] border border-black/18 bg-[#f8f8f6] p-4 shadow-[0_15px_36px_rgba(0,0,0,0.12)] md:p-5">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="font-mono text-[11px] uppercase tracking-[0.1em] text-black/82">Image Manager</h2>
-              <div className="inline-flex rounded-full border border-black/16 bg-white p-0.5">
+        <section className="mt-3 border border-[#dbdbdb] bg-[#ececec] p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#858585]">Image Manager</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="inline-flex border border-[#d0d0d0] bg-[#f4f4f4]">
                 {galleryOptions.map((gallery) => (
                   <button
                     key={gallery}
                     type="button"
                     onClick={() => setActiveGallery(gallery)}
-                    className={`rounded-full px-3 py-1 font-mono text-[10px] uppercase tracking-[0.08em] transition ${
-                      activeGallery === gallery ? "bg-black text-white" : "text-black/65 hover:bg-black/4"
-                    }`}
+                    className={`h-8 px-3 text-[11px] font-semibold uppercase tracking-[0.08em] ${activeGallery === gallery ? "bg-[#dfdfdf] text-[#3f3f3f]" : "text-[#747474]"}`}
                   >
                     {gallery}
                   </button>
                 ))}
               </div>
-            </div>
 
-            <div className="mt-3 flex flex-wrap gap-2">
               <button
                 type="button"
                 onClick={autoFillGallery}
-                className="inline-flex h-8 items-center justify-center rounded-[9px] border border-black/20 bg-white px-3 font-mono text-[10px] uppercase tracking-[0.08em] text-black/80 transition hover:bg-black/4"
+                className="h-8 border border-[#c9c9c9] bg-[#f7f7f7] px-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#636363]"
               >
                 Auto Fill
               </button>
               <button
                 type="button"
                 onClick={sortSelectedGallery}
-                className="inline-flex h-8 items-center justify-center rounded-[9px] border border-black/20 bg-white px-3 font-mono text-[10px] uppercase tracking-[0.08em] text-black/80 transition hover:bg-black/4"
+                className="h-8 border border-[#c9c9c9] bg-[#f7f7f7] px-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#636363]"
               >
                 Sort A-Z
               </button>
-              <label className="inline-flex h-8 cursor-pointer items-center justify-center rounded-[9px] border border-black/20 bg-white px-3 font-mono text-[10px] uppercase tracking-[0.08em] text-black/80 transition hover:bg-black/4">
+              <label className="inline-flex h-8 cursor-pointer items-center border border-[#c9c9c9] bg-[#f7f7f7] px-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#636363]">
                 Upload
                 <input
                   type="file"
@@ -465,106 +526,88 @@ export default function AdminPage() {
                 />
               </label>
             </div>
+          </div>
 
-            <div className="mt-3 grid gap-2 md:grid-cols-2">
-              <article className="rounded-[12px] border border-black/12 bg-white/82 p-2.5">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-black/48">Selected</p>
-                  <span className="rounded-full border border-black/12 bg-black/4 px-2 py-0.5 font-mono text-[10px] text-black/60">{cmsData.galleries[activeGallery].length}</span>
-                </div>
+          <div className="mt-3 grid gap-3 lg:grid-cols-2">
+            <div className="border border-[#d7d7d7] bg-[#f1f1f1]">
+              <div className="grid grid-cols-[44px_1fr_110px] border-b border-[#d9d9d9] bg-[#ebebeb] text-[12px] font-semibold text-[#8b8b8b]">
+                <div className="border-r border-[#d9d9d9] px-3 py-2 text-center">#</div>
+                <div className="border-r border-[#d9d9d9] px-3 py-2">Selected ({cmsData.galleries[activeGallery].length})</div>
+                <div className="px-3 py-2">Actions</div>
+              </div>
 
-                <div className="pantom-scrollbar mt-2 max-h-[280px] space-y-1.5 overflow-y-auto pr-1">
-                  {cmsData.galleries[activeGallery].map((path, index) => (
-                    <div
-                      key={`${path}-${index}`}
-                      draggable
-                      onDragStart={() => setDraggedIndex(index)}
-                      onDragEnd={() => setDraggedIndex(null)}
-                      onDragOver={(event) => event.preventDefault()}
-                      onDrop={(event) => {
-                        event.preventDefault()
-                        if (draggedIndex !== null) {
-                          moveGalleryImageToIndex(draggedIndex, index)
-                        }
-                        setDraggedIndex(null)
-                      }}
-                      className={`flex items-center gap-1.5 rounded-[8px] border border-black/12 bg-white px-1.5 py-1.5 ${
-                        draggedIndex === index ? "opacity-55" : "opacity-100"
-                      }`}
+              <div className="pantom-scrollbar max-h-[320px] overflow-y-auto">
+                {cmsData.galleries[activeGallery].map((path, index) => (
+                  <div
+                    key={`${path}-${index}`}
+                    draggable
+                    onDragStart={() => setDraggedIndex(index)}
+                    onDragEnd={() => setDraggedIndex(null)}
+                    onDragOver={(event) => event.preventDefault()}
+                    onDrop={(event) => {
+                      event.preventDefault()
+                      if (draggedIndex !== null) {
+                        moveGalleryImageToIndex(draggedIndex, index)
+                      }
+                      setDraggedIndex(null)
+                    }}
+                    className={`grid grid-cols-[44px_1fr_110px] border-b border-[#dfdfdf] text-[11px] text-[#4d4d4d] ${draggedIndex === index ? "opacity-50" : "opacity-100"}`}
+                    onMouseEnter={(event) => handlePreviewMove(event, path)}
+                    onMouseMove={(event) => handlePreviewMove(event, path)}
+                    onMouseLeave={() => setHoveredPreviewPath(null)}
+                  >
+                    <div className="border-r border-[#dfdfdf] px-3 py-2 text-center font-semibold">{index + 1}</div>
+                    <div className="truncate border-r border-[#dfdfdf] px-3 py-2">{path}</div>
+                    <div className="flex items-center gap-1 px-2 py-1.5">
+                      <button type="button" onClick={() => moveGalleryImage(index, -1)} className="h-6 w-6 border border-[#cfcfcf] bg-[#f7f7f7] text-[11px]">-</button>
+                      <button type="button" onClick={() => moveGalleryImage(index, 1)} className="h-6 w-6 border border-[#cfcfcf] bg-[#f7f7f7] text-[11px]">+</button>
+                      <button type="button" onClick={() => removeGalleryImage(path)} className="h-6 w-6 border border-[#cfcfcf] bg-[#f7f7f7] text-[11px]">x</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="border border-[#d7d7d7] bg-[#f1f1f1]">
+              <div className="grid grid-cols-[44px_1fr_80px] border-b border-[#d9d9d9] bg-[#ebebeb] text-[12px] font-semibold text-[#8b8b8b]">
+                <div className="border-r border-[#d9d9d9] px-3 py-2 text-center">#</div>
+                <div className="border-r border-[#d9d9d9] px-3 py-2">Available ({galleryFiles.length})</div>
+                <div className="px-3 py-2">Add</div>
+              </div>
+
+              <div className="pantom-scrollbar max-h-[320px] overflow-y-auto">
+                {galleryFiles.map((path, index) => {
+                  const isSelected = cmsData.galleries[activeGallery].includes(path)
+                  return (
+                    <button
+                      key={path}
+                      type="button"
+                      onClick={() => addGalleryImage(path)}
                       onMouseEnter={(event) => handlePreviewMove(event, path)}
                       onMouseMove={(event) => handlePreviewMove(event, path)}
                       onMouseLeave={() => setHoveredPreviewPath(null)}
+                      disabled={isSelected}
+                      className="grid w-full grid-cols-[44px_1fr_80px] border-b border-[#dfdfdf] text-left text-[11px] text-[#4d4d4d] disabled:opacity-45"
                     >
-                      <span className="rounded-[6px] border border-black/18 bg-black/3 px-1.5 font-mono text-[10px] text-black/58">drag</span>
-                      <button
-                        type="button"
-                        onClick={() => moveGalleryImage(index, -1)}
-                        className="h-5 w-5 rounded-[6px] border border-black/18 bg-white font-mono text-[10px] leading-none"
-                        aria-label="Move image up"
-                      >
-                        -
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => moveGalleryImage(index, 1)}
-                        className="h-5 w-5 rounded-[6px] border border-black/18 bg-white font-mono text-[10px] leading-none"
-                        aria-label="Move image down"
-                      >
-                        +
-                      </button>
-                      <span className="truncate font-mono text-[10px] text-black/72">{path}</span>
-                      <button
-                        type="button"
-                        onClick={() => removeGalleryImage(path)}
-                        className="ml-auto h-5 w-5 rounded-[6px] border border-black/18 bg-white font-mono text-[10px] leading-none"
-                        aria-label="Remove image"
-                      >
-                        x
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </article>
-
-              <article className="rounded-[12px] border border-black/12 bg-white/82 p-2.5">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-black/48">Available</p>
-                  <span className="rounded-full border border-black/12 bg-black/4 px-2 py-0.5 font-mono text-[10px] text-black/60">{galleryFiles.length}</span>
-                </div>
-
-                <div className="pantom-scrollbar mt-2 max-h-[280px] space-y-1.5 overflow-y-auto pr-1">
-                  {galleryFiles.map((path) => {
-                    const isSelected = cmsData.galleries[activeGallery].includes(path)
-                    return (
-                      <button
-                        key={path}
-                        type="button"
-                        onClick={() => addGalleryImage(path)}
-                        onMouseEnter={(event) => handlePreviewMove(event, path)}
-                        onMouseMove={(event) => handlePreviewMove(event, path)}
-                        onMouseLeave={() => setHoveredPreviewPath(null)}
-                        disabled={isSelected}
-                        className="flex w-full items-center gap-2 rounded-[8px] border border-black/12 bg-white px-2 py-1.5 text-left transition hover:bg-black/2 disabled:cursor-not-allowed disabled:opacity-45"
-                      >
-                        <span className="truncate font-mono text-[10px] text-black/72">{path}</span>
-                        <span className="ml-auto rounded-[6px] border border-black/18 bg-black/3 px-1.5 font-mono text-[10px] text-black/70">{isSelected ? "ok" : "+"}</span>
-                      </button>
-                    )
-                  })}
-                </div>
-              </article>
+                      <div className="border-r border-[#dfdfdf] px-3 py-2 text-center font-semibold">{index + 1}</div>
+                      <div className="truncate border-r border-[#dfdfdf] px-3 py-2">{path}</div>
+                      <div className="px-3 py-2 font-semibold">{isSelected ? "ok" : "+"}</div>
+                    </button>
+                  )
+                })}
+              </div>
             </div>
-          </section>
-        </div>
+          </div>
+        </section>
       </section>
 
       {hoveredPreviewPath ? (
         <div
-          className="pointer-events-none fixed z-50 rounded-[12px] border border-black/20 bg-white p-1.5 shadow-[0_16px_36px_rgba(0,0,0,0.2)]"
+          className="pointer-events-none fixed z-50 border border-[#d2d2d2] bg-[#fbfbfb] p-1 shadow-[0_8px_24px_rgba(0,0,0,0.16)]"
           style={{ left: `${previewPosition.x}px`, top: `${previewPosition.y}px` }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={hoveredPreviewPath} alt="Preview" className="h-[140px] w-[200px] rounded-[8px] object-cover" />
+          <img src={hoveredPreviewPath} alt="Preview" className="h-[140px] w-[200px] object-cover" />
         </div>
       ) : null}
     </main>
