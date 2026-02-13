@@ -72,6 +72,8 @@ type GifWindowSeed = {
   rotate: number
 }
 
+const animatedGifIds = new Set([2, 5, 7, 11, 12, 18, 23, 27, 28])
+
 const trailColors = ["#00f5ff", "#ff4fd8", "#fff05f", "#7cff6b", "#8ea8ff", "#ffffff", "#ff9f40"]
 
 const closeErrorMessages = [
@@ -89,13 +91,13 @@ function pseudoRandom(seed: number) {
 
 function buildGifWindowSeeds(count: number) {
   const hugeWindowIds = new Set([2, 7, 12, 18, 23, 27])
-  const hugeWindowEdgePositions: Record<number, { left: number; top: number }> = {
-    2: { left: -14, top: -14 },
-    7: { left: 68, top: -14 },
-    12: { left: -14, top: 68 },
-    18: { left: 68, top: 68 },
-    23: { left: 28, top: -16 },
-    27: { left: 30, top: 72 },
+  const hugeWindowEdgeConfig: Record<number, "left" | "right" | "top" | "bottom"> = {
+    2: "left",
+    7: "right",
+    12: "top",
+    18: "bottom",
+    23: "left",
+    27: "right",
   }
 
   return Array.from({ length: count }, (_, index) => {
@@ -104,8 +106,8 @@ function buildGifWindowSeeds(count: number) {
     if (id === 28) {
       return {
         id,
-        left: "76%",
-        top: "1%",
+        left: "74%",
+        top: "4%",
         width: 220,
         height: 170,
         rotate: -5,
@@ -115,14 +117,31 @@ function buildGifWindowSeeds(count: number) {
     const isHuge = hugeWindowIds.has(id)
 
     if (isHuge) {
-      const corner = hugeWindowEdgePositions[id]
+      const side = hugeWindowEdgeConfig[id]
       const hugeWidth = 350 + Math.floor(pseudoRandom(id * 3.3) * 160)
       const hugeHeight = Math.max(280, Math.min(520, hugeWidth - 20 + Math.floor(pseudoRandom(id * 5.9) * 50)))
 
+      let left = 0
+      let top = 0
+
+      if (side === "left") {
+        left = -18 + pseudoRandom(id * 2.4) * 8
+        top = 6 + pseudoRandom(id * 3.5) * 72
+      } else if (side === "right") {
+        left = 76 + pseudoRandom(id * 2.8) * 16
+        top = 4 + pseudoRandom(id * 3.7) * 76
+      } else if (side === "top") {
+        left = 8 + pseudoRandom(id * 2.1) * 74
+        top = -20 + pseudoRandom(id * 3.2) * 10
+      } else {
+        left = 10 + pseudoRandom(id * 2.9) * 72
+        top = 68 + pseudoRandom(id * 3.9) * 16
+      }
+
       return {
         id,
-        left: `${corner.left.toFixed(2)}%`,
-        top: `${corner.top.toFixed(2)}%`,
+        left: `${left.toFixed(2)}%`,
+        top: `${top.toFixed(2)}%`,
         width: hugeWidth,
         height: hugeHeight,
         rotate: -6 + pseudoRandom(id * 9.4) * 12,
@@ -267,37 +286,126 @@ function RetroGifWindow({
   onClick,
   onMouseEnter,
   onMouseLeave,
+  draggable = false,
+  animated = true,
 }: GifWindowSeed & {
   source: string
   label: string
   titleBarClassName?: string
   interactive?: boolean
+  draggable?: boolean
+  animated?: boolean
   zIndex?: number
   onClick?: () => void
   onMouseEnter?: () => void
   onMouseLeave?: () => void
 }) {
+  const [offset, setOffset] = useState({ x: 0, y: 0 })
+  const [isDesktop, setIsDesktop] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
+  const [currentZIndex, setCurrentZIndex] = useState<number | undefined>(zIndex)
+  const dragStateRef = useRef<DragState | null>(null)
+
+  useEffect(() => {
+    const query = window.matchMedia("(min-width: 768px)")
+    const updateMode = () => setIsDesktop(query.matches)
+
+    updateMode()
+    query.addEventListener("change", updateMode)
+
+    return () => query.removeEventListener("change", updateMode)
+  }, [])
+
+  useEffect(() => {
+    setCurrentZIndex(zIndex)
+  }, [zIndex])
+
+  const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (!draggable || !isDesktop || event.button !== 0) return
+
+    event.preventDefault()
+    setCurrentZIndex(getNextWindowZ())
+    setIsDragging(true)
+    dragStateRef.current = {
+      pointerId: event.pointerId,
+      startPointerX: event.clientX,
+      startPointerY: event.clientY,
+      startOffsetX: offset.x,
+      startOffsetY: offset.y,
+    }
+
+    event.currentTarget.setPointerCapture(event.pointerId)
+  }
+
+  const onPointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    const dragState = dragStateRef.current
+    if (!draggable || !isDesktop || !dragState || dragState.pointerId !== event.pointerId) return
+
+    const nextX = dragState.startOffsetX + (event.clientX - dragState.startPointerX)
+    const nextY = dragState.startOffsetY + (event.clientY - dragState.startPointerY)
+
+    setOffset({ x: nextX, y: nextY })
+  }
+
+  const endDrag = (event: PointerEvent<HTMLDivElement>) => {
+    const dragState = dragStateRef.current
+    if (!dragState || dragState.pointerId !== event.pointerId) return
+
+    setIsDragging(false)
+    dragStateRef.current = null
+
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId)
+    }
+  }
+
   return (
     <div
-      className={`${interactive ? "pointer-events-auto cursor-pointer" : "pointer-events-none"} absolute hidden border-2 border-[#0d0d0d] bg-[#c6c6c6] shadow-[inset_-1px_-1px_0_#0d0d0d,inset_1px_1px_0_#ffffff,2px_2px_0_#0d0d0d] md:block`}
-      style={{ left, top, width, zIndex, transform: `rotate(${rotate}deg)` }}
+      className={`${interactive ? "pointer-events-auto" : "pointer-events-none"} absolute hidden border-2 border-[#0d0d0d] bg-[#c6c6c6] shadow-[inset_-1px_-1px_0_#0d0d0d,inset_1px_1px_0_#ffffff,2px_2px_0_#0d0d0d] ${draggable && isDesktop && !isDragging ? "transition-transform duration-150" : ""} md:block`}
+      style={{
+        left,
+        top,
+        width,
+        zIndex: currentZIndex,
+        transform: `translate3d(${offset.x}px, ${offset.y}px, 0px) rotate(${rotate}deg)`,
+      }}
       onClick={onClick}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
-      <div className={`flex items-center justify-between border-b border-[#0d0d0d] px-1 py-0.5 ${titleBarClassName}`}>
+      <div
+        className={`flex items-center justify-between border-b border-[#0d0d0d] px-1 py-0.5 ${titleBarClassName} ${draggable && isDesktop ? "cursor-move" : ""}`}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+      >
         <span className="font-mono text-[8px] uppercase tracking-[0.06em] text-white">{label}</span>
         <span className="h-2 w-2 border border-[#0d0d0d] bg-[#c6c6c6]" />
       </div>
-      <Image
-        src={source}
-        alt="Animated under-construction frame"
-        width={320}
-        height={424}
-        unoptimized
-        className="w-full object-cover"
-        style={{ height }}
-      />
+      {animated ? (
+        <Image
+          src={source}
+          alt="Animated under-construction frame"
+          width={320}
+          height={424}
+          unoptimized
+          className="w-full object-cover"
+          style={{ height }}
+        />
+      ) : (
+        <div
+          className="relative w-full overflow-hidden border-t border-black/20 bg-[#0d0d0d]"
+          style={{ height }}
+        >
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.14)_0%,rgba(255,255,255,0.02)_44%,rgba(255,255,255,0.2)_100%)]" />
+          <div className="absolute inset-x-0 top-[18%] h-[1px] bg-white/20" />
+          <div className="absolute inset-x-0 top-[53%] h-[1px] bg-white/15" />
+          <p className="absolute bottom-2 left-2 border border-white/25 bg-black/45 px-1 py-0.5 font-mono text-[8px] uppercase tracking-[0.08em] text-white/80">
+            preview buffered
+          </p>
+        </div>
+      )}
     </div>
   )
 }
@@ -414,9 +522,9 @@ export function UnderConstructionPage({
 
   return (
     <StudioFrame navOverride={navKey} backgroundColor={desktopBgColor}>
-      <main className="relative h-full overflow-hidden px-4 pb-10 pt-24 md:px-8 md:pb-14 md:pt-28">
+      <main className="relative min-h-[calc(100dvh-5.5rem)] overflow-hidden px-4 pb-10 pt-24 md:px-8 md:pb-12 md:pt-28">
 
-        <div className="relative mx-auto flex w-full max-w-[1320px] flex-col gap-4 md:block md:h-[980px]">
+        <div className="relative mx-auto flex w-full max-w-[1400px] flex-col gap-4 md:h-[calc(100dvh-11rem)] md:min-h-[760px]">
           {gifWindowSeeds.map((seed) => {
             const isSpecial28 = seed.id === 28
             const specialTitleClass = isGif28Alert ? "bg-[#aa0000]" : isGif28Hovered ? "bg-[#2667f2]" : "bg-[#000080]"
@@ -434,6 +542,8 @@ export function UnderConstructionPage({
                 label={`gif 28 #${seed.id}`}
                 interactive={isSpecial28}
                 zIndex={isSpecial28 ? 34 : undefined}
+                draggable={isSpecial28}
+                animated={animatedGifIds.has(seed.id)}
                 titleBarClassName={isSpecial28 ? specialTitleClass : "bg-[#000080]"}
                 onClick={isSpecial28 ? handleGif28Click : undefined}
                 onMouseEnter={isSpecial28 ? () => setIsGif28Hovered(true) : undefined}
