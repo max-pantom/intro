@@ -135,6 +135,21 @@ export default function AdminAnalyticsPage() {
 
   const hourlyMax = useMemo(() => Math.max(...summary.hourlyClicks.map((point) => point.clicks), 1), [summary.hourlyClicks])
 
+  const trackedSourceStats = useMemo(() => {
+    const sourceMap = new Map(summary.sourceBreakdown.map((row) => [row.source, row.clicks]))
+    return {
+      nav: sourceMap.get("nav") ?? 0,
+      folder: sourceMap.get("folder") ?? 0,
+      command: sourceMap.get("command") ?? 0,
+      outbound: sourceMap.get("outbound") ?? 0,
+    }
+  }, [summary.sourceBreakdown])
+
+  const deviceStats = useMemo(
+    () => [...summary.audienceSegments.byDevice].sort((a, b) => b.sessions - a.sessions),
+    [summary.audienceSegments.byDevice],
+  )
+
   if (isLoading) {
     return (
       <main className="flex min-h-dvh items-center justify-center bg-[#efefef] px-4">
@@ -158,7 +173,7 @@ export default function AdminAnalyticsPage() {
   }
 
   return (
-    <main className="analytics-scrollbar min-h-dvh overflow-x-auto overflow-y-auto bg-[#efefef] p-2 sm:p-3">
+    <main className="analytics-scrollbar h-dvh overflow-x-auto overflow-y-auto bg-[#efefef] p-2 sm:p-3">
       <section className="mx-auto w-full max-w-[1420px]">
         <div className="flex flex-wrap items-center justify-between gap-2 border border-[#dbdbdb] bg-[#ececec] px-3 py-2">
           <div>
@@ -260,6 +275,53 @@ export default function AdminAnalyticsPage() {
                 <span className="text-[9px] text-[#8a8a8a]">{index % 3 === 0 ? point.label : ""}</span>
               </div>
             ))}
+          </div>
+        </section>
+
+        <section className="mt-3 grid gap-3 xl:grid-cols-[1.1fr_1fr]">
+          <div className="border border-[#dbdbdb] bg-[#ececec] p-3">
+            <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#858585]">Tracked Intent Channels</p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              <div className="border border-[#d8d8d8] bg-[#f5f5f5] px-3 py-2">
+                <p className="text-[10px] uppercase tracking-[0.08em] text-[#8d8d8d]">Nav Clicks</p>
+                <p className="mt-1 text-[22px] font-semibold text-[#494949]">{trackedSourceStats.nav.toLocaleString()}</p>
+              </div>
+              <div className="border border-[#d8d8d8] bg-[#f5f5f5] px-3 py-2">
+                <p className="text-[10px] uppercase tracking-[0.08em] text-[#8d8d8d]">Folder Clicks</p>
+                <p className="mt-1 text-[22px] font-semibold text-[#494949]">{trackedSourceStats.folder.toLocaleString()}</p>
+              </div>
+              <div className="border border-[#d8d8d8] bg-[#f5f5f5] px-3 py-2">
+                <p className="text-[10px] uppercase tracking-[0.08em] text-[#8d8d8d]">Command Clicks</p>
+                <p className="mt-1 text-[22px] font-semibold text-[#494949]">{trackedSourceStats.command.toLocaleString()}</p>
+              </div>
+              <div className="border border-[#d8d8d8] bg-[#f5f5f5] px-3 py-2">
+                <p className="text-[10px] uppercase tracking-[0.08em] text-[#8d8d8d]">Outbound Clicks</p>
+                <p className="mt-1 text-[22px] font-semibold text-[#494949]">{trackedSourceStats.outbound.toLocaleString()}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="border border-[#dbdbdb] bg-[#ececec] p-3">
+            <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#858585]">Device Segments</p>
+            <div className="mt-3 overflow-x-auto border border-[#d8d8d8] bg-[#f5f5f5]">
+              <div className="min-w-[460px]">
+                <div className="grid grid-cols-[1.2fr_100px_100px_120px] border-b border-[#dcdcdc] text-[11px] font-semibold text-[#8a8a8a]">
+                  <div className="border-r border-[#dedede] px-3 py-2">Device</div>
+                  <div className="border-r border-[#dedede] px-3 py-2">Sessions</div>
+                  <div className="border-r border-[#dedede] px-3 py-2">Clicks</div>
+                  <div className="px-3 py-2">Contact Clicks</div>
+                </div>
+                {deviceStats.map((device) => (
+                  <div key={device.label} className="grid grid-cols-[1.2fr_100px_100px_120px] border-b border-[#dcdcdc] text-[11px] text-[#4f4f4f]">
+                    <div className="border-r border-[#dedede] px-3 py-2 font-semibold uppercase">{device.label || "unknown"}</div>
+                    <div className="border-r border-[#dedede] px-3 py-2">{device.sessions.toLocaleString()}</div>
+                    <div className="border-r border-[#dedede] px-3 py-2">{device.clicks.toLocaleString()}</div>
+                    <div className="px-3 py-2">{device.contactClicks.toLocaleString()}</div>
+                  </div>
+                ))}
+                {deviceStats.length === 0 ? <div className="px-3 py-3 text-[11px] text-[#757575]">No device data yet.</div> : null}
+              </div>
+            </div>
           </div>
         </section>
 

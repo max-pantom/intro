@@ -499,7 +499,8 @@ function isPublicPath(pathValue: string) {
 }
 
 function isClickLike(event: AnalyticsEvent) {
-  return event.eventName.includes("click") || event.eventName.includes("open")
+  return event.eventName.includes("click")
+  // return event.eventName.includes("click") || event.eventName.includes("open")
 }
 
 function buildDailySeries(events: AnalyticsEvent[], days: number): AnalyticsTimePoint[] {

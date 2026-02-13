@@ -38,6 +38,11 @@ function flushItemDurations(
   itemVisibleTotals: Map<string, number>,
   itemMeta: Map<string, { itemId: string; itemType: string; label: string }>,
 ) {
+  // Disabled for now to avoid high-volume gallery/image tracking noise.
+  // Re-enable when we specifically need per-item view duration analytics.
+  return
+
+  /*
   const now = Date.now()
 
   for (const [key, since] of itemVisibleSince.entries()) {
@@ -64,6 +69,7 @@ function flushItemDurations(
   }
 
   itemVisibleTotals.clear()
+  */
 }
 
 export function SiteAnalytics() {
@@ -262,6 +268,10 @@ export function SiteAnalytics() {
 
     const itemObserver = new IntersectionObserver(
       (entries) => {
+        // Disabled for now to avoid tracking gallery/image impressions.
+        return
+
+        /*
         const now = Date.now()
         for (const entry of entries) {
           const element = entry.target as HTMLElement
@@ -301,6 +311,7 @@ export function SiteAnalytics() {
             itemVisibleSinceRef.current.delete(key)
           }
         }
+        */
       },
       { threshold: [0.6] },
     )
