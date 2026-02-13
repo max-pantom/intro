@@ -21,6 +21,8 @@ function cloneDefaults(): CmsPublicData {
   }
 }
 
+const galleryOptions: GalleryKey[] = ["apps", "website", "labs"]
+
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [password, setPassword] = useState("")
@@ -34,9 +36,15 @@ export default function AdminPage() {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
 
   const statusColor = useMemo(() => {
-    if (status.tone === "error") return "text-[#b90000]"
-    if (status.tone === "success") return "text-[#155a1f]"
-    return "text-black/55"
+    if (status.tone === "error") return "text-[#a9182d]"
+    if (status.tone === "success") return "text-[#126640]"
+    return "text-black/58"
+  }, [status.tone])
+
+  const statusBadgeClass = useMemo(() => {
+    if (status.tone === "error") return "border-[#a9182d]/28 bg-[#a9182d]/7 text-[#8f1325]"
+    if (status.tone === "success") return "border-[#126640]/25 bg-[#126640]/8 text-[#0f5536]"
+    return "border-black/15 bg-black/5 text-black/62"
   }, [status.tone])
 
   const loadAdminData = async () => {
@@ -248,65 +256,105 @@ export default function AdminPage() {
   }
 
   if (isLoading) {
-    return <main className="flex min-h-dvh items-center justify-center font-mono text-[12px] uppercase tracking-[0.06em]">Loading CMS...</main>
+    return (
+      <main className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-[linear-gradient(135deg,#efefed_0%,#d8d8d5_100%)] px-4">
+        <div className="pointer-events-none absolute left-[-9rem] top-[-8rem] h-[20rem] w-[20rem] rounded-full bg-[#0e3fcb]/12 blur-3xl" />
+        <div className="pointer-events-none absolute bottom-[-10rem] right-[-8rem] h-[22rem] w-[22rem] rounded-full bg-[#f0ab65]/16 blur-3xl" />
+        <div className="relative rounded-[18px] border border-black/14 bg-white/76 px-7 py-4 shadow-[0_24px_65px_rgba(18,18,18,0.16)] backdrop-blur">
+          <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-black/68">Loading CMS Workspace...</p>
+        </div>
+      </main>
+    )
   }
 
   if (!isAuthenticated) {
     return (
-      <main className="flex min-h-dvh items-center justify-center bg-[#ececec] px-4">
-        <section className="w-full max-w-[420px] border border-black/30 bg-white p-4">
-          <h1 className="font-mono text-[13px] uppercase tracking-[0.06em] text-black">Simple CMS Login</h1>
-          <p className="mt-1 font-mono text-[11px] text-black/60">Set `CMS_ADMIN_PASSWORD` in your env file.</p>
-          <input
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") login()
-            }}
-            placeholder="Password"
-            className="mt-3 w-full border border-black/30 px-2 py-1 font-mono text-[12px] outline-none"
-          />
-          <button
-            type="button"
-            onClick={login}
-            className="mt-3 w-full border border-black/40 bg-black px-2 py-1 font-mono text-[12px] uppercase tracking-[0.06em] text-white"
-          >
-            Login
-          </button>
-          {status.message ? <p className={`mt-2 font-mono text-[11px] ${statusColor}`}>{status.message}</p> : null}
+      <main className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-[linear-gradient(130deg,#efefec_0%,#d7d6d4_56%,#cecfc9_100%)] px-4 py-8">
+        <div className="pointer-events-none absolute left-[-8rem] top-[6%] h-[20rem] w-[20rem] rounded-full bg-[#0d47d6]/14 blur-3xl" />
+        <div className="pointer-events-none absolute bottom-[-9rem] right-[-7rem] h-[20rem] w-[20rem] rounded-full bg-[#121212]/10 blur-3xl" />
+
+        <section className="relative w-full max-w-[470px] overflow-hidden rounded-[22px] border border-black/20 bg-[#f8f8f6] shadow-[0_30px_72px_rgba(0,0,0,0.2)]">
+          <div className="h-3 bg-[linear-gradient(90deg,#0c43c0_0%,#2a65ea_38%,#f8f8f6_100%)]" />
+
+          <div className="px-6 py-7 sm:px-8 sm:py-8">
+            <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-black/54">Studio / CMS</p>
+            <h1 className="mt-2 font-mono text-[24px] leading-none tracking-[-0.04em] text-black">Admin Login</h1>
+            <p className="mt-3 max-w-[32ch] font-mono text-[11px] leading-relaxed text-black/65">Use your CMS password to edit navigation labels, folder links, and gallery order.</p>
+            <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.08em] text-black/45">`CMS_ADMIN_PASSWORD` must be set in your environment.</p>
+
+            <input
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") login()
+              }}
+              placeholder="Password"
+              className="mt-5 w-full rounded-[10px] border border-black/18 bg-white px-3 py-2.5 font-mono text-[12px] text-black outline-none transition focus:border-black/40"
+            />
+
+            <button
+              type="button"
+              onClick={login}
+              className="mt-3 inline-flex h-10 w-full items-center justify-center rounded-[10px] border border-black/35 bg-black font-mono text-[11px] uppercase tracking-[0.09em] text-white transition hover:bg-black/90"
+            >
+              Login
+            </button>
+
+            <p className={`mt-3 min-h-4 font-mono text-[11px] ${statusColor}`}>{status.message || " "}</p>
+          </div>
         </section>
       </main>
     )
   }
 
   return (
-    <main className="pantom-scrollbar h-dvh overflow-y-auto bg-[#ececec] px-2 py-3 md:px-6">
-      <section className="mx-auto w-full max-w-[980px] border border-black/20 bg-white p-3 md:p-5">
-        <div className="sticky top-0 z-10 -mx-3 -mt-3 border-b border-black/15 bg-white px-3 py-3 md:static md:m-0 md:border-b-0 md:p-0">
+    <main className="pantom-scrollbar relative h-dvh overflow-y-auto bg-[linear-gradient(125deg,#efefec_0%,#dddcd8_64%,#d0d1cd_100%)] px-3 py-4 md:px-8 md:py-8">
+      <div className="pointer-events-none absolute left-[-11rem] top-[-10rem] h-[24rem] w-[24rem] rounded-full bg-[#1147ca]/10 blur-3xl" />
+      <div className="pointer-events-none absolute bottom-[-11rem] right-[-9rem] h-[24rem] w-[24rem] rounded-full bg-[#0d0d0d]/8 blur-3xl" />
+
+      <section className="relative mx-auto w-full max-w-[1260px]">
+        <div className="sticky top-3 z-20 rounded-[18px] border border-black/18 bg-[#f7f7f5]/95 px-4 py-4 shadow-[0_20px_40px_rgba(0,0,0,0.14)] backdrop-blur md:px-6 md:py-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="font-mono text-[13px] uppercase tracking-[0.08em] text-black">CMS Dashboard</h1>
-            <p className={`mt-1 font-mono text-[11px] ${statusColor}`}>{status.message || "Edit content, media, and save to publish."}</p>
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-black/52">Studio / Content Manager</p>
+              <h1 className="mt-1 font-mono text-[24px] leading-none tracking-[-0.04em] text-black md:text-[28px]">CMS Dashboard</h1>
+              <p className={`mt-2 font-mono text-[11px] ${statusColor}`}>{status.message || "Edit content and media, then save to publish."}</p>
+            </div>
+
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+              <span className={`inline-flex items-center justify-center rounded-full border px-3 py-1 font-mono text-[10px] uppercase tracking-[0.09em] ${statusBadgeClass}`}>
+                {status.tone === "idle" ? "Ready" : status.tone}
+              </span>
+              <button
+                type="button"
+                onClick={save}
+                className="inline-flex h-9 items-center justify-center rounded-[10px] border border-black/35 bg-black px-4 font-mono text-[11px] uppercase tracking-[0.08em] text-white transition hover:bg-black/88"
+              >
+                Save Changes
+              </button>
+              <button
+                type="button"
+                onClick={logout}
+                className="inline-flex h-9 items-center justify-center rounded-[10px] border border-black/28 bg-white px-4 font-mono text-[11px] uppercase tracking-[0.08em] text-black/82 transition hover:bg-black/3"
+              >
+                Logout
+              </button>
+            </div>
           </div>
-          <div className="flex w-full items-center gap-2 sm:w-auto">
-            <button type="button" onClick={save} className="flex-1 border border-black/35 bg-black px-3 py-2 font-mono text-[11px] uppercase tracking-[0.06em] text-white sm:flex-none sm:py-1.5">
-              Save
-            </button>
-            <button type="button" onClick={logout} className="flex-1 border border-black/35 px-3 py-2 font-mono text-[11px] uppercase tracking-[0.06em] text-black sm:flex-none sm:py-1.5">
-              Logout
-            </button>
-          </div>
-        </div>
         </div>
 
-        <div className="mt-3 grid gap-3 lg:grid-cols-[1fr_1fr_1.2fr]">
-          <section className="border border-black/15 p-3">
-            <h2 className="font-mono text-[11px] uppercase tracking-[0.06em] text-black/80">Header Nav</h2>
-            <div className="mt-2 space-y-2">
+        <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.4fr)] xl:items-start">
+          <section className="rounded-[18px] border border-black/18 bg-[#f8f8f6] p-4 shadow-[0_15px_36px_rgba(0,0,0,0.12)] md:p-5">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="font-mono text-[11px] uppercase tracking-[0.1em] text-black/82">Header Nav</h2>
+              <span className="rounded-full border border-black/15 bg-black/4 px-2 py-0.5 font-mono text-[10px] text-black/60">{cmsData.navItems.length}</span>
+            </div>
+
+            <div className="mt-3 space-y-2.5">
               {cmsData.navItems.map((item, index) => (
-                <div key={item.key} className="border border-black/10 p-2">
-                  <p className="font-mono text-[10px] uppercase tracking-[0.06em] text-black/45">{item.key}</p>
+                <article key={item.key} className="rounded-[12px] border border-black/12 bg-white/82 p-2.5">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.09em] text-black/45">{item.key}</p>
                   <input
                     value={item.label}
                     onChange={(event) => {
@@ -314,7 +362,8 @@ export default function AdminPage() {
                       next[index] = { ...next[index], label: event.target.value }
                       setCmsData({ ...cmsData, navItems: next })
                     }}
-                    className="mt-1 w-full border border-black/20 px-2 py-1 font-mono text-[11px] outline-none"
+                    className="mt-1.5 w-full rounded-[9px] border border-black/16 bg-white px-3 py-2 font-mono text-[11px] text-black/86 outline-none transition focus:border-black/38"
+                    placeholder="Label"
                   />
                   <input
                     value={item.href}
@@ -323,19 +372,24 @@ export default function AdminPage() {
                       next[index] = { ...next[index], href: event.target.value }
                       setCmsData({ ...cmsData, navItems: next })
                     }}
-                    className="mt-1 w-full border border-black/20 px-2 py-1 font-mono text-[11px] outline-none"
+                    className="mt-1.5 w-full rounded-[9px] border border-black/16 bg-white px-3 py-2 font-mono text-[11px] text-black/86 outline-none transition focus:border-black/38"
+                    placeholder="Href"
                   />
-                </div>
+                </article>
               ))}
             </div>
           </section>
 
-          <section className="border border-black/15 p-3">
-            <h2 className="font-mono text-[11px] uppercase tracking-[0.06em] text-black/80">Home Folders</h2>
-            <div className="mt-2 space-y-2">
+          <section className="rounded-[18px] border border-black/18 bg-[#f8f8f6] p-4 shadow-[0_15px_36px_rgba(0,0,0,0.12)] md:p-5">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="font-mono text-[11px] uppercase tracking-[0.1em] text-black/82">Home Folders</h2>
+              <span className="rounded-full border border-black/15 bg-black/4 px-2 py-0.5 font-mono text-[10px] text-black/60">{cmsData.homeFolderTiles.length}</span>
+            </div>
+
+            <div className="mt-3 space-y-2.5">
               {cmsData.homeFolderTiles.map((item, index) => (
-                <div key={`${item.color}-${index}`} className="border border-black/10 p-2">
-                  <p className="font-mono text-[10px] uppercase tracking-[0.06em] text-black/45">{item.color}</p>
+                <article key={`${item.color}-${index}`} className="rounded-[12px] border border-black/12 bg-white/82 p-2.5">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.09em] text-black/45">{item.color}</p>
                   <input
                     value={item.label}
                     onChange={(event) => {
@@ -343,7 +397,8 @@ export default function AdminPage() {
                       next[index] = { ...next[index], label: event.target.value }
                       setCmsData({ ...cmsData, homeFolderTiles: next })
                     }}
-                    className="mt-1 w-full border border-black/20 px-2 py-1 font-mono text-[11px] outline-none"
+                    className="mt-1.5 w-full rounded-[9px] border border-black/16 bg-white px-3 py-2 font-mono text-[11px] text-black/86 outline-none transition focus:border-black/38"
+                    placeholder="Label"
                   />
                   <input
                     value={item.href}
@@ -352,23 +407,26 @@ export default function AdminPage() {
                       next[index] = { ...next[index], href: event.target.value }
                       setCmsData({ ...cmsData, homeFolderTiles: next })
                     }}
-                    className="mt-1 w-full border border-black/20 px-2 py-1 font-mono text-[11px] outline-none"
+                    className="mt-1.5 w-full rounded-[9px] border border-black/16 bg-white px-3 py-2 font-mono text-[11px] text-black/86 outline-none transition focus:border-black/38"
+                    placeholder="Href"
                   />
-                </div>
+                </article>
               ))}
             </div>
           </section>
 
-          <section className="border border-black/15 p-3">
+          <section className="rounded-[18px] border border-black/18 bg-[#f8f8f6] p-4 shadow-[0_15px_36px_rgba(0,0,0,0.12)] md:p-5">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="font-mono text-[11px] uppercase tracking-[0.06em] text-black/80">Image Manager</h2>
-              <div className="flex items-center gap-1">
-                {(["apps", "website", "labs"] as GalleryKey[]).map((gallery) => (
+              <h2 className="font-mono text-[11px] uppercase tracking-[0.1em] text-black/82">Image Manager</h2>
+              <div className="inline-flex rounded-full border border-black/16 bg-white p-0.5">
+                {galleryOptions.map((gallery) => (
                   <button
                     key={gallery}
                     type="button"
                     onClick={() => setActiveGallery(gallery)}
-                    className={`border px-2 py-1 font-mono text-[10px] uppercase ${activeGallery === gallery ? "border-black bg-black text-white" : "border-black/25 bg-white text-black/75"}`}
+                    className={`rounded-full px-3 py-1 font-mono text-[10px] uppercase tracking-[0.08em] transition ${
+                      activeGallery === gallery ? "bg-black text-white" : "text-black/65 hover:bg-black/4"
+                    }`}
                   >
                     {gallery}
                   </button>
@@ -376,14 +434,22 @@ export default function AdminPage() {
               </div>
             </div>
 
-            <div className="mt-2 flex flex-wrap gap-1">
-              <button type="button" onClick={autoFillGallery} className="border border-black/20 bg-white px-2 py-1 font-mono text-[10px] uppercase text-black/80">
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={autoFillGallery}
+                className="inline-flex h-8 items-center justify-center rounded-[9px] border border-black/20 bg-white px-3 font-mono text-[10px] uppercase tracking-[0.08em] text-black/80 transition hover:bg-black/4"
+              >
                 Auto Fill
               </button>
-              <button type="button" onClick={sortSelectedGallery} className="border border-black/20 bg-white px-2 py-1 font-mono text-[10px] uppercase text-black/80">
+              <button
+                type="button"
+                onClick={sortSelectedGallery}
+                className="inline-flex h-8 items-center justify-center rounded-[9px] border border-black/20 bg-white px-3 font-mono text-[10px] uppercase tracking-[0.08em] text-black/80 transition hover:bg-black/4"
+              >
                 Sort A-Z
               </button>
-              <label className="cursor-pointer border border-black/20 bg-white px-2 py-1 font-mono text-[10px] uppercase text-black/80">
+              <label className="inline-flex h-8 cursor-pointer items-center justify-center rounded-[9px] border border-black/20 bg-white px-3 font-mono text-[10px] uppercase tracking-[0.08em] text-black/80 transition hover:bg-black/4">
                 Upload
                 <input
                   type="file"
@@ -400,10 +466,14 @@ export default function AdminPage() {
               </label>
             </div>
 
-            <div className="mt-2 grid gap-2 md:grid-cols-2">
-              <div className="border border-black/10 p-2">
-                <p className="font-mono text-[10px] uppercase tracking-[0.06em] text-black/45">Selected ({cmsData.galleries[activeGallery].length})</p>
-                <div className="pantom-scrollbar mt-2 max-h-[200px] space-y-1 overflow-y-auto">
+            <div className="mt-3 grid gap-2 md:grid-cols-2">
+              <article className="rounded-[12px] border border-black/12 bg-white/82 p-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-black/48">Selected</p>
+                  <span className="rounded-full border border-black/12 bg-black/4 px-2 py-0.5 font-mono text-[10px] text-black/60">{cmsData.galleries[activeGallery].length}</span>
+                </div>
+
+                <div className="pantom-scrollbar mt-2 max-h-[280px] space-y-1.5 overflow-y-auto pr-1">
                   {cmsData.galleries[activeGallery].map((path, index) => (
                     <div
                       key={`${path}-${index}`}
@@ -418,24 +488,51 @@ export default function AdminPage() {
                         }
                         setDraggedIndex(null)
                       }}
-                      className={`flex items-center gap-1 border border-black/10 px-1 py-1 ${draggedIndex === index ? "opacity-50" : "opacity-100"}`}
+                      className={`flex items-center gap-1.5 rounded-[8px] border border-black/12 bg-white px-1.5 py-1.5 ${
+                        draggedIndex === index ? "opacity-55" : "opacity-100"
+                      }`}
                       onMouseEnter={(event) => handlePreviewMove(event, path)}
                       onMouseMove={(event) => handlePreviewMove(event, path)}
                       onMouseLeave={() => setHoveredPreviewPath(null)}
                     >
-                      <span className="border border-black/20 px-1 font-mono text-[10px] text-black/60">drag</span>
-                      <button type="button" onClick={() => moveGalleryImage(index, -1)} className="border border-black/20 px-1 font-mono text-[10px]">-</button>
-                      <button type="button" onClick={() => moveGalleryImage(index, 1)} className="border border-black/20 px-1 font-mono text-[10px]">+</button>
-                      <span className="truncate font-mono text-[10px] text-black/70">{path}</span>
-                      <button type="button" onClick={() => removeGalleryImage(path)} className="ml-auto border border-black/20 px-1 font-mono text-[10px]">x</button>
+                      <span className="rounded-[6px] border border-black/18 bg-black/3 px-1.5 font-mono text-[10px] text-black/58">drag</span>
+                      <button
+                        type="button"
+                        onClick={() => moveGalleryImage(index, -1)}
+                        className="h-5 w-5 rounded-[6px] border border-black/18 bg-white font-mono text-[10px] leading-none"
+                        aria-label="Move image up"
+                      >
+                        -
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moveGalleryImage(index, 1)}
+                        className="h-5 w-5 rounded-[6px] border border-black/18 bg-white font-mono text-[10px] leading-none"
+                        aria-label="Move image down"
+                      >
+                        +
+                      </button>
+                      <span className="truncate font-mono text-[10px] text-black/72">{path}</span>
+                      <button
+                        type="button"
+                        onClick={() => removeGalleryImage(path)}
+                        className="ml-auto h-5 w-5 rounded-[6px] border border-black/18 bg-white font-mono text-[10px] leading-none"
+                        aria-label="Remove image"
+                      >
+                        x
+                      </button>
                     </div>
                   ))}
                 </div>
-              </div>
+              </article>
 
-              <div className="border border-black/10 p-2">
-                <p className="font-mono text-[10px] uppercase tracking-[0.06em] text-black/45">Available ({galleryFiles.length})</p>
-                <div className="pantom-scrollbar mt-2 max-h-[200px] space-y-1 overflow-y-auto">
+              <article className="rounded-[12px] border border-black/12 bg-white/82 p-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-black/48">Available</p>
+                  <span className="rounded-full border border-black/12 bg-black/4 px-2 py-0.5 font-mono text-[10px] text-black/60">{galleryFiles.length}</span>
+                </div>
+
+                <div className="pantom-scrollbar mt-2 max-h-[280px] space-y-1.5 overflow-y-auto pr-1">
                   {galleryFiles.map((path) => {
                     const isSelected = cmsData.galleries[activeGallery].includes(path)
                     return (
@@ -447,15 +544,15 @@ export default function AdminPage() {
                         onMouseMove={(event) => handlePreviewMove(event, path)}
                         onMouseLeave={() => setHoveredPreviewPath(null)}
                         disabled={isSelected}
-                        className="flex w-full items-center gap-2 border border-black/10 px-1 py-1 text-left disabled:opacity-45"
+                        className="flex w-full items-center gap-2 rounded-[8px] border border-black/12 bg-white px-2 py-1.5 text-left transition hover:bg-black/2 disabled:cursor-not-allowed disabled:opacity-45"
                       >
-                        <span className="truncate font-mono text-[10px] text-black/70">{path}</span>
-                        <span className="ml-auto border border-black/20 px-1 font-mono text-[10px]">{isSelected ? "ok" : "+"}</span>
+                        <span className="truncate font-mono text-[10px] text-black/72">{path}</span>
+                        <span className="ml-auto rounded-[6px] border border-black/18 bg-black/3 px-1.5 font-mono text-[10px] text-black/70">{isSelected ? "ok" : "+"}</span>
                       </button>
                     )
                   })}
                 </div>
-              </div>
+              </article>
             </div>
           </section>
         </div>
@@ -463,11 +560,11 @@ export default function AdminPage() {
 
       {hoveredPreviewPath ? (
         <div
-          className="pointer-events-none fixed z-50 border border-black/25 bg-white p-1 shadow-[0_12px_28px_rgba(0,0,0,0.2)]"
+          className="pointer-events-none fixed z-50 rounded-[12px] border border-black/20 bg-white p-1.5 shadow-[0_16px_36px_rgba(0,0,0,0.2)]"
           style={{ left: `${previewPosition.x}px`, top: `${previewPosition.y}px` }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={hoveredPreviewPath} alt="Preview" className="h-[140px] w-[200px] object-cover" />
+          <img src={hoveredPreviewPath} alt="Preview" className="h-[140px] w-[200px] rounded-[8px] object-cover" />
         </div>
       ) : null}
     </main>
