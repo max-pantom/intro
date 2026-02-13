@@ -50,6 +50,8 @@ export async function POST(request: Request) {
           timezone?: string
           country?: string
           city?: string
+          siteHost?: string
+          siteOrigin?: string
           userAgent?: string
           device?: string
           metricName?: string
@@ -72,6 +74,8 @@ export async function POST(request: Request) {
         timezone: payload.meta.timezone,
         country: payload.meta.country,
         city: payload.meta.city,
+        siteHost: payload.meta.siteHost,
+        siteOrigin: payload.meta.siteOrigin,
         userAgent: payload.meta.userAgent,
         device: normalizeDevice(payload.meta.device),
         metricName: normalizeMetricName(payload.meta.metricName),

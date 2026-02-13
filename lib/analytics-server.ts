@@ -17,8 +17,11 @@ import type {
 const ANALYTICS_DIR = path.join(process.cwd(), "data")
 const ANALYTICS_PATH = path.join(ANALYTICS_DIR, "analytics-events.json")
 const MAX_STORED_EVENTS = 25000
+const GEO_CACHE_TTL_MS = 6 * 60 * 60 * 1000
+const GEO_LOOKUP_TIMEOUT_MS = 1200
 
 const botPattern = /bot|spider|crawl|headless|curl|wget|preview|monitor|uptime|slurp|facebookexternalhit|discordbot|whatsapp|telegram/i
+const geoCache = new Map<string, { country: string; city: string; expiresAt: number }>()
 
 function hasPostgresConfig() {
   return Boolean(process.env.POSTGRES_URL || process.env.DATABASE_URL)
@@ -93,6 +96,11 @@ function safeDate(value: unknown) {
   if (typeof value !== "string") return null
   const parsed = new Date(value)
   if (Number.isNaN(parsed.getTime())) return null
+  const now = Date.now()
+  const maxFutureMs = now + 5 * 60 * 1000
+  if (parsed.getTime() > maxFutureMs) {
+    return new Date(now)
+  }
   return parsed
 }
 
@@ -102,6 +110,97 @@ function parseHost(value: string) {
     return new URL(value).hostname.toLowerCase()
   } catch {
     return ""
+  }
+}
+
+function getClientIpFromHeaders(headers?: Headers) {
+  if (!headers) return ""
+
+  const forwardedFor = headers.get("x-forwarded-for") ?? headers.get("x-vercel-forwarded-for") ?? ""
+  if (forwardedFor) {
+    const first = forwardedFor
+      .split(",")
+      .map((part) => part.trim())
+      .find(Boolean)
+    if (first) return first
+  }
+
+  return (
+    headers.get("x-real-ip") ??
+    headers.get("cf-connecting-ip") ??
+    headers.get("x-client-ip") ??
+    headers.get("fastly-client-ip") ??
+    ""
+  )
+}
+
+function isPrivateOrLocalIp(ip: string) {
+  const value = ip.trim().toLowerCase()
+  if (!value) return true
+  if (value === "::1" || value === "localhost") return true
+  if (value.startsWith("127.")) return true
+  if (value.startsWith("10.")) return true
+  if (value.startsWith("192.168.")) return true
+  if (value.startsWith("169.254.")) return true
+  if (value.startsWith("172.")) {
+    const secondOctet = Number(value.split(".")[1])
+    if (secondOctet >= 16 && secondOctet <= 31) return true
+  }
+  if (value.startsWith("fc") || value.startsWith("fd") || value.startsWith("fe80")) return true
+  return false
+}
+
+function isGeoEnrichmentEnabled() {
+  return process.env.ANALYTICS_GEO_ENRICHMENT !== "0"
+}
+
+async function lookupGeoByIp(ip: string): Promise<{ country: string; city: string } | null> {
+  if (!ip || isPrivateOrLocalIp(ip) || !isGeoEnrichmentEnabled()) return null
+
+  const cached = geoCache.get(ip)
+  if (cached && cached.expiresAt > Date.now()) {
+    return { country: cached.country, city: cached.city }
+  }
+
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), GEO_LOOKUP_TIMEOUT_MS)
+
+  try {
+    const response = await fetch(`https://ipwho.is/${encodeURIComponent(ip)}`, {
+      headers: { accept: "application/json" },
+      signal: controller.signal,
+      cache: "no-store",
+    })
+
+    if (!response.ok) return null
+
+    const payload = (await response.json()) as {
+      success?: boolean
+      country_code?: string
+      country?: string
+      city?: string
+    }
+
+    if (payload.success === false) return null
+
+    const countryCode = sanitizeText(payload.country_code, 8).toUpperCase()
+    const countryName = sanitizeText(payload.country, 80)
+    const city = sanitizeText(payload.city, 120)
+    const country = countryCode || countryName
+
+    if (!country && !city) return null
+
+    geoCache.set(ip, {
+      country,
+      city,
+      expiresAt: Date.now() + GEO_CACHE_TTL_MS,
+    })
+
+    return { country, city }
+  } catch {
+    return null
+  } finally {
+    clearTimeout(timeoutId)
   }
 }
 
@@ -144,6 +243,8 @@ function normalizeEvent(input: Omit<Partial<AnalyticsEvent>, "meta"> & { meta?: 
       timezone: sanitizeText(input.meta?.timezone, 80),
       country: sanitizeText(input.meta?.country, 80),
       city: sanitizeText(input.meta?.city, 120),
+      siteHost: sanitizeText(input.meta?.siteHost, 180).toLowerCase(),
+      siteOrigin: sanitizeText(input.meta?.siteOrigin, 260).toLowerCase(),
       userAgent,
       device,
       metricName: normalizeMetricName(input.meta?.metricName),
@@ -178,13 +279,20 @@ function buildServerMetaFromHeaders(headers?: Headers) {
       userAgent: "",
       referrer: "",
       referrerHost: "",
+      ip: "",
+      siteHost: "",
+      siteOrigin: "",
     }
   }
 
-  const country = headers.get("x-vercel-ip-country") ?? headers.get("cf-ipcountry") ?? ""
-  const city = headers.get("x-vercel-ip-city") ?? ""
+  const country = headers.get("x-vercel-ip-country") ?? headers.get("cf-ipcountry") ?? headers.get("x-country-code") ?? ""
+  const city = headers.get("x-vercel-ip-city") ?? headers.get("x-city") ?? ""
   const userAgent = headers.get("user-agent") ?? ""
   const referrer = headers.get("referer") ?? ""
+  const ip = getClientIpFromHeaders(headers)
+  const siteHost = headers.get("x-forwarded-host") ?? headers.get("host") ?? ""
+  const proto = headers.get("x-forwarded-proto") ?? "https"
+  const siteOrigin = siteHost ? `${proto}://${siteHost}` : ""
 
   return {
     country,
@@ -192,6 +300,9 @@ function buildServerMetaFromHeaders(headers?: Headers) {
     userAgent,
     referrer,
     referrerHost: parseHost(referrer),
+    ip,
+    siteHost,
+    siteOrigin,
   }
 }
 
@@ -204,6 +315,17 @@ function randomSessionId() {
 
 export async function recordAnalyticsEvent(input: RecordAnalyticsEventInput, headers?: Headers) {
   const serverMeta = buildServerMetaFromHeaders(headers)
+  const geoFromIp = await lookupGeoByIp(serverMeta.ip)
+
+  const trustedReferrer = sanitizeText(serverMeta.referrer, 700)
+  const fallbackReferrer = sanitizeText(input.meta?.referrer, 700)
+  const resolvedReferrer = trustedReferrer || fallbackReferrer
+  const resolvedReferrerHost = parseHost(resolvedReferrer) || sanitizeText(input.meta?.referrerHost, 180)
+  const resolvedCountry = sanitizeText(serverMeta.country, 80) || geoFromIp?.country || sanitizeText(input.meta?.country, 80)
+  const resolvedCity = sanitizeText(serverMeta.city, 120) || geoFromIp?.city || sanitizeText(input.meta?.city, 120)
+  const resolvedUserAgent = sanitizeText(serverMeta.userAgent, 300) || sanitizeText(input.meta?.userAgent, 300)
+  const resolvedSiteHost = sanitizeText(serverMeta.siteHost, 180).toLowerCase() || sanitizeText(input.meta?.siteHost, 180).toLowerCase()
+  const resolvedSiteOrigin = sanitizeText(serverMeta.siteOrigin, 260).toLowerCase() || sanitizeText(input.meta?.siteOrigin, 260).toLowerCase()
 
   const normalized = normalizeEvent({
     occurredAt: input.occurredAt ?? new Date().toISOString(),
@@ -221,11 +343,14 @@ export async function recordAnalyticsEvent(input: RecordAnalyticsEventInput, hea
     durationMs: input.durationMs ?? 0,
     meta: {
       ...input.meta,
-      country: sanitizeText(input.meta?.country, 80) || serverMeta.country,
-      city: sanitizeText(input.meta?.city, 120) || serverMeta.city,
-      userAgent: sanitizeText(input.meta?.userAgent, 300) || serverMeta.userAgent,
-      referrer: sanitizeText(input.meta?.referrer, 700) || serverMeta.referrer,
-      referrerHost: sanitizeText(input.meta?.referrerHost, 180) || serverMeta.referrerHost,
+      country: resolvedCountry,
+      city: resolvedCity,
+      siteHost: resolvedSiteHost,
+      siteOrigin: resolvedSiteOrigin,
+      userAgent: resolvedUserAgent,
+      referrer: resolvedReferrer,
+      referrerHost: resolvedReferrerHost,
+      device: undefined,
     },
   })
 

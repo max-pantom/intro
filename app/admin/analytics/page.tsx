@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 
 import type { AnalyticsSummary } from "@/lib/analytics-types"
 
@@ -89,38 +89,41 @@ export default function AdminAnalyticsPage() {
   const [errorMessage, setErrorMessage] = useState("")
   const [days, setDays] = useState(14)
 
+  const loadSummary = useCallback(async () => {
+    setIsLoading(true)
+
+    try {
+      const response = await fetch(`/api/admin/analytics?days=${days}`, { cache: "no-store" })
+
+      if (response.status === 401) {
+        setIsUnauthorized(true)
+        setErrorMessage("")
+        return
+      }
+
+      if (!response.ok) {
+        setErrorMessage("Could not load analytics data.")
+        return
+      }
+
+      const payload = (await response.json()) as AnalyticsSummary
+      setSummary(payload)
+      setIsUnauthorized(false)
+      setErrorMessage("")
+    } catch {
+      setErrorMessage("Could not connect to analytics endpoint.")
+    } finally {
+      setIsLoading(false)
+    }
+  }, [days])
+
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
-      setIsLoading(true)
-      fetch(`/api/admin/analytics?days=${days}`, { cache: "no-store" })
-        .then(async (response) => {
-          if (response.status === 401) {
-            setIsUnauthorized(true)
-            setErrorMessage("")
-            return null
-          }
-
-          if (!response.ok) {
-            setErrorMessage("Could not load analytics data.")
-            return null
-          }
-
-          const payload = (await response.json()) as AnalyticsSummary
-          setSummary(payload)
-          setIsUnauthorized(false)
-          setErrorMessage("")
-          return payload
-        })
-        .catch(() => {
-          setErrorMessage("Could not connect to analytics endpoint.")
-        })
-        .finally(() => {
-          setIsLoading(false)
-        })
+      void loadSummary()
     }, 0)
 
     return () => window.clearTimeout(timeoutId)
-  }, [days])
+  }, [loadSummary])
 
   const dailyChart = useMemo(() => {
     const values = summary.dailyClicks.map((point) => point.clicks)
@@ -155,7 +158,7 @@ export default function AdminAnalyticsPage() {
   }
 
   return (
-    <main className="pantom-scrollbar min-h-dvh overflow-y-auto bg-[#efefef] p-2 sm:p-3">
+    <main className="analytics-scrollbar min-h-dvh overflow-x-auto overflow-y-auto bg-[#efefef] p-2 sm:p-3">
       <section className="mx-auto w-full max-w-[1420px]">
         <div className="flex flex-wrap items-center justify-between gap-2 border border-[#dbdbdb] bg-[#ececec] px-3 py-2">
           <div>
@@ -175,6 +178,13 @@ export default function AdminAnalyticsPage() {
               <option value={30}>30 days</option>
               <option value={60}>60 days</option>
             </select>
+            <button
+              type="button"
+              onClick={() => void loadSummary()}
+              className="inline-flex h-8 items-center border border-[#c9c9c9] bg-[#f7f7f7] px-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#636363]"
+            >
+              Refresh
+            </button>
             <Link href="/admin" className="inline-flex h-8 items-center border border-[#c9c9c9] bg-[#f7f7f7] px-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#636363]">
               Back To CMS
             </Link>

@@ -27,6 +27,8 @@ export type AnalyticsEvent = {
     timezone: string
     country: string
     city: string
+    siteHost: string
+    siteOrigin: string
     userAgent: string
     device: AnalyticsDevice
     metricName: "LCP" | "INP" | "CLS" | "OTHER" | ""

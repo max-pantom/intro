@@ -5,15 +5,31 @@ import { useEffect, useRef } from "react"
 
 import { getAnalyticsSessionId, sendAnalyticsEvent } from "@/lib/analytics-client"
 
-function isExternalHref(href: string) {
-  if (href.startsWith("mailto:") || href.startsWith("tel:")) return true
-  if (!href.startsWith("http")) return false
+function resolveLinkInfo(href: string) {
+  const trimmed = href.trim()
+  if (!trimmed) return null
+  if (trimmed.startsWith("javascript:")) return null
+  if (trimmed.startsWith("#")) {
+    return {
+      href: trimmed,
+      isExternal: false,
+      targetHost: window.location.hostname.toLowerCase(),
+    }
+  }
 
   try {
-    const target = new URL(href)
-    return target.origin !== window.location.origin
+    const target = new URL(trimmed, window.location.origin)
+    return {
+      href: target.href,
+      isExternal: target.origin !== window.location.origin,
+      targetHost: target.hostname.toLowerCase(),
+    }
   } catch {
-    return false
+    return {
+      href: trimmed,
+      isExternal: trimmed.startsWith("mailto:") || trimmed.startsWith("tel:"),
+      targetHost: "",
+    }
   }
 }
 
@@ -60,6 +76,7 @@ export function SiteAnalytics() {
 
   const seenSectionsRef = useRef(new Set<string>())
   const seenItemsRef = useRef(new Set<string>())
+  const previousPathRef = useRef("")
   const itemVisibleSinceRef = useRef(new Map<string, number>())
   const itemVisibleTotalsRef = useRef(new Map<string, number>())
   const itemMetaRef = useRef(new Map<string, { itemId: string; itemType: string; label: string }>())
@@ -87,6 +104,20 @@ export function SiteAnalytics() {
       path: pathname,
       sessionId: sessionIdRef.current,
     })
+
+    if (previousPathRef.current && previousPathRef.current !== pathname) {
+      sendAnalyticsEvent({
+        eventName: "route_change",
+        source: "other",
+        sourceContext: "route",
+        label: `${previousPathRef.current} -> ${pathname}`,
+        href: pathname,
+        path: pathname,
+        sessionId: sessionIdRef.current,
+      })
+    }
+
+    previousPathRef.current = pathname
 
     if (pathname === "/") {
       sendAnalyticsEvent({
@@ -142,12 +173,30 @@ export function SiteAnalytics() {
       if (!anchor) return
 
       const href = anchor.getAttribute("href") || ""
-      if (!href || !isExternalHref(href)) return
+      const linkInfo = resolveLinkInfo(href)
+      if (!linkInfo) return
 
       const explicitSource = anchor.getAttribute("data-analytics-source") || ""
       const section = anchor.closest("[data-analytics-section]")?.getAttribute("data-analytics-section") || ""
-      const sourceContext = explicitSource || section || "outbound"
-      const label = (anchor.textContent || anchor.getAttribute("aria-label") || href).trim().slice(0, 180)
+      const sourceContext = explicitSource || section || "link"
+      const label = (anchor.textContent || anchor.getAttribute("aria-label") || linkInfo.href).trim().slice(0, 180)
+      const isAutoTrackedAlready = anchor.hasAttribute("data-analytics-source") || anchor.hasAttribute("data-analytics-item-id")
+
+      if (!isAutoTrackedAlready) {
+        sendAnalyticsEvent({
+          eventName: "link_click",
+          source: linkInfo.isExternal ? "outbound" : "other",
+          sourceContext,
+          section,
+          label,
+          href: linkInfo.href,
+          path: pathname,
+          sessionId: sessionIdRef.current,
+          itemType: linkInfo.isExternal ? "external-link" : "internal-link",
+        })
+      }
+
+      if (!linkInfo.isExternal) return
 
       sendAnalyticsEvent({
         eventName: "outbound_click",
@@ -155,18 +204,19 @@ export function SiteAnalytics() {
         sourceContext,
         section,
         label,
-        href,
+        href: linkInfo.href,
         path: pathname,
         sessionId: sessionIdRef.current,
+        itemType: linkInfo.targetHost,
       })
 
-      if (href.startsWith("mailto:") || href.includes("cal.com")) {
+      if (linkInfo.href.startsWith("mailto:") || linkInfo.href.includes("cal.com")) {
         sendAnalyticsEvent({
           eventName: "funnel_step",
           source: "outbound",
           sourceContext: "funnel",
           label: "contact-click",
-          href,
+          href: linkInfo.href,
           path: pathname,
           sessionId: sessionIdRef.current,
         })

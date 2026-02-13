@@ -45,6 +45,8 @@ function getBaseMeta(): NonNullable<RecordAnalyticsEventInput["meta"]> {
       utmCampaign: "",
       locale: "",
       timezone: "",
+      siteHost: "",
+      siteOrigin: "",
       userAgent: "",
       device: "unknown",
     }
@@ -62,6 +64,8 @@ function getBaseMeta(): NonNullable<RecordAnalyticsEventInput["meta"]> {
     utmCampaign: params.get("utm_campaign") ?? "",
     locale: navigator.language || "",
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "",
+    siteHost: window.location.hostname.toLowerCase(),
+    siteOrigin: window.location.origin,
     userAgent,
     device: classifyDevice(userAgent),
   }
