@@ -4,7 +4,7 @@ import { SectionHeading } from "./section-heading"
 
 export function ServicesSection() {
   return (
-    <section id="services" className="pantom-reveal space-y-8">
+    <section id="services" data-analytics-section="services" className="pantom-reveal space-y-8">
       <SectionHeading eyebrow="Services" title="Design, development, branding, and MVP delivery.">
         Built for startup velocity with production constraints in mind.
       </SectionHeading>

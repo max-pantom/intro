@@ -24,6 +24,7 @@ export function AppsContent({ appsImages, cardsToRender }: AppsContentProps) {
 
       <main
         className="pantom-scrollbar h-full overflow-y-auto px-5 pb-8 pt-[170px] md:px-6 md:pb-10 md:pt-[212px]"
+        data-analytics-section="apps-gallery"
         onScroll={(event) => {
           const scrollTop = event.currentTarget.scrollTop
           const isAtTop = scrollTop <= 4
@@ -33,11 +34,17 @@ export function AppsContent({ appsImages, cardsToRender }: AppsContentProps) {
           lastScrollTopRef.current = scrollTop
         }}
       >
-        <section className="grid w-full grid-cols-2 gap-[10px] md:grid-cols-4">
+        <section className="grid w-full grid-cols-2 gap-[10px] md:grid-cols-4" data-analytics-section="apps-grid">
           {Array.from({ length: cardsToRender }).map((_, index) => {
             const src = appsImages[index]
             return (
-              <article key={src ?? `placeholder-${index}`} className="flex min-h-[220px] items-center justify-center overflow-hidden md:min-h-[250px]">
+              <article
+                key={src ?? `placeholder-${index}`}
+                className="flex min-h-[220px] items-center justify-center overflow-hidden md:min-h-[250px]"
+                data-analytics-item-id={src ?? ""}
+                data-analytics-item-type="apps"
+                data-analytics-item-label={src ?? ""}
+              >
                 {src ? (
                   <Image
                     src={src}

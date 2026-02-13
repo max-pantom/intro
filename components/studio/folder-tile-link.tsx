@@ -26,8 +26,20 @@ export function FolderTileLink({ folder }: FolderTileLinkProps) {
       className="group flex flex-col items-center text-center"
       onMouseEnter={triggerLabelAnimation}
       onFocus={triggerLabelAnimation}
+      data-analytics-source="home-folders"
+      data-analytics-item-id={folder.href}
+      data-analytics-item-type="folder-tile"
+      data-analytics-item-label={folder.label}
       onClick={() => {
-        trackCmsClick({ source: "folder", label: folder.label, href: folder.href })
+        trackCmsClick({
+          source: "folder",
+          sourceContext: "home-folder-tile",
+          label: folder.label,
+          href: folder.href,
+          itemId: folder.href,
+          itemType: "folder-tile",
+          section: "home-folders",
+        })
       }}
     >
       <FolderIcon color={folder.color} className="h-[76px] w-[92px]" />

@@ -1,9 +1,16 @@
+"use client"
+
 import type { AnalyticsSource } from "@/lib/analytics-types"
+import { sendAnalyticsClick } from "@/lib/analytics-client"
 
 type TrackClickPayload = {
   source: AnalyticsSource
   label: string
   href: string
+  sourceContext?: string
+  section?: string
+  itemId?: string
+  itemType?: string
 }
 
 function sanitizeValue(value: string, maxLength: number) {
@@ -17,18 +24,13 @@ export function trackCmsClick(payload: TrackClickPayload) {
 
   if (!label || !href) return
 
-  const body = JSON.stringify({ source, label, href })
-
-  if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
-    const blob = new Blob([body], { type: "application/json" })
-    const sent = navigator.sendBeacon("/api/cms/click", blob)
-    if (sent) return
-  }
-
-  void fetch("/api/cms/click", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body,
-    keepalive: true,
-  }).catch(() => undefined)
+  sendAnalyticsClick({
+    source,
+    sourceContext: payload.sourceContext ?? source,
+    label,
+    href,
+    section: payload.section,
+    itemId: payload.itemId,
+    itemType: payload.itemType,
+  })
 }

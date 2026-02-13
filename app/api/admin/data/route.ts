@@ -1,6 +1,7 @@
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 
+import { recordAnalyticsEvent } from "@/lib/analytics-server"
 import { getCmsPublicData, saveCmsPublicData } from "@/lib/cms-server"
 
 const CMS_COOKIE = "cms_admin"
@@ -26,5 +27,21 @@ export async function POST(request: Request) {
 
   const payload = await request.json().catch(() => null)
   const next = await saveCmsPublicData(payload)
+
+  await recordAnalyticsEvent(
+    {
+      eventName: "cms_publish",
+      source: "system",
+      sourceContext: "cms-admin",
+      path: "/admin",
+      label: "cms publish",
+      value: 1,
+      meta: {
+        metricName: "OTHER",
+      },
+    },
+    request.headers,
+  )
+
   return NextResponse.json(next)
 }

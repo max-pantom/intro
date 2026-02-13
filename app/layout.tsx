@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Agentation } from "agentation";
 import { Geist_Mono, Inter, Noto_Serif } from "next/font/google";
 import type { ReactNode } from "react";
+import { SiteAnalytics } from "@/components/analytics/site-analytics";
 import "./globals.css";
 
 const inter = Inter({ variable: "--font-sans", subsets: ["latin"] });
@@ -28,6 +29,7 @@ export default function RootLayout({
         className={`${geistMono.variable} antialiased`}
       >
         {children}
+        <SiteAnalytics />
         {process.env.NODE_ENV === "development" && <Agentation />}
       </body>
     </html>

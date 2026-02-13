@@ -23,6 +23,7 @@ export function WebsiteContent({ websiteImages }: WebsiteContentProps) {
 
       <main
         className="pantom-scrollbar h-full overflow-y-auto px-5 pb-8 pt-[170px] md:px-6 md:pb-10 md:pt-[196px]"
+        data-analytics-section="website-gallery"
         onScroll={(event) => {
           const scrollTop = event.currentTarget.scrollTop
           const isAtTop = scrollTop <= 4
@@ -32,10 +33,16 @@ export function WebsiteContent({ websiteImages }: WebsiteContentProps) {
           lastScrollTopRef.current = scrollTop
         }}
       >
-        <section className="flex w-full flex-col gap-5">
+        <section className="flex w-full flex-col gap-5" data-analytics-section="website-grid">
           {websiteImages.length > 0 ? (
             websiteImages.map((src, index) => (
-              <article key={src} className="overflow-hidden bg-[#d9d9d9]">
+              <article
+                key={src}
+                className="overflow-hidden bg-[#d9d9d9]"
+                data-analytics-item-id={src}
+                data-analytics-item-type="website"
+                data-analytics-item-label={src}
+              >
                 <Image
                   src={src}
                   alt=""
