@@ -73,7 +73,7 @@ type GifWindowSeed = {
   rotate: number
 }
 
-const animatedGifIds = new Set([7, 18, 23, 28])
+const animatedGifIds = new Set(Array.from({ length: 28 }, (_, index) => index + 1))
 
 const trailColors = ["#00f5ff", "#ff4fd8", "#fff05f", "#7cff6b", "#8ea8ff", "#ffffff", "#ff9f40"]
 
