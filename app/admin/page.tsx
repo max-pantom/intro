@@ -10,13 +10,10 @@ type Status = {
 }
 
 type ContentRow = {
-  amountSpent: string
   id: string
   index: number
+  key: string
   label: string
-  scarcity: string
-  ticket: string
-  tokenUsed: string
   type: "nav" | "folder"
   value: string
 }
@@ -55,36 +52,24 @@ export default function AdminPage() {
     return "text-[#777777]"
   }, [status.tone])
 
-  const tableDate = useMemo(() => {
-    return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date()).replace(/\//g, "-")
-  }, [])
-
   const contentRows = useMemo<ContentRow[]>(() => {
     const navRows = cmsData.navItems.map((item, index) => {
-      const tokenUsed = (item.label.length + item.href.length) * 1000
       return {
-        amountSpent: "$" + (tokenUsed / 9.7).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
         id: `nav-${item.key}`,
         index,
+        key: item.key,
         label: item.label,
-        scarcity: `${index + 1}/${cmsData.navItems.length}`,
-        ticket: item.key.toUpperCase(),
-        tokenUsed: tokenUsed.toLocaleString(),
         type: "nav" as const,
         value: item.href,
       }
     })
 
     const folderRows = cmsData.homeFolderTiles.map((item, index) => {
-      const tokenUsed = (item.label.length + item.href.length) * 1000
       return {
-        amountSpent: "$" + (tokenUsed / 8.4).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
         id: `folder-${item.color}-${index}`,
         index,
+        key: item.color,
         label: item.label,
-        scarcity: `${index + 1}/${cmsData.homeFolderTiles.length}`,
-        ticket: item.color.toUpperCase(),
-        tokenUsed: tokenUsed.toLocaleString(),
         type: "folder" as const,
         value: item.href,
       }
@@ -98,7 +83,7 @@ export default function AdminPage() {
     if (!query) return contentRows
 
     return contentRows.filter((row) => {
-      return [row.label, row.value, row.ticket, row.type].some((field) => field.toLowerCase().includes(query))
+      return [row.label, row.value, row.key, row.type].some((field) => field.toLowerCase().includes(query))
     })
   }, [contentRows, searchQuery])
 
@@ -394,6 +379,12 @@ export default function AdminPage() {
               >
                 Save
               </button>
+              <a
+                href="/admin/analytics"
+                className="inline-flex h-9 items-center border border-[#c9c9c9] bg-[#f7f7f7] px-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#636363]"
+              >
+                Analytics
+              </a>
               <button
                 type="button"
                 onClick={logout}
@@ -407,22 +398,18 @@ export default function AdminPage() {
         </div>
 
         <section className="mt-3 overflow-x-auto border border-[#dbdbdb] bg-[#ececec]">
-          <div className="min-w-[1150px]">
-            <div className="grid grid-cols-[44px_54px_1.2fr_1.7fr_1fr_1fr_1.1fr_1.1fr_.7fr_.9fr] border-b border-[#d9d9d9] bg-[#ebebeb] text-[12px] font-semibold text-[#8b8b8b]">
+          <div className="min-w-[980px]">
+            <div className="grid grid-cols-[44px_54px_.8fr_.8fr_1.3fr_2fr] border-b border-[#d9d9d9] bg-[#ebebeb] text-[12px] font-semibold text-[#8b8b8b]">
               <div className="border-r border-[#d9d9d9] px-3 py-3 text-center">#</div>
               <div className="border-r border-[#d9d9d9] px-3 py-3 text-center">Sel</div>
-              <div className="border-r border-[#d9d9d9] px-3 py-3">Name</div>
-              <div className="border-r border-[#d9d9d9] px-3 py-3">Email</div>
-              <div className="border-r border-[#d9d9d9] px-3 py-3">Token Used</div>
-              <div className="border-r border-[#d9d9d9] px-3 py-3">Amount spent</div>
-              <div className="border-r border-[#d9d9d9] px-3 py-3">Ticket</div>
-              <div className="border-r border-[#d9d9d9] px-3 py-3">Summary</div>
-              <div className="border-r border-[#d9d9d9] px-3 py-3">Scarcity</div>
-              <div className="px-3 py-3">Date</div>
+              <div className="border-r border-[#d9d9d9] px-3 py-3">Type</div>
+              <div className="border-r border-[#d9d9d9] px-3 py-3">Key</div>
+              <div className="border-r border-[#d9d9d9] px-3 py-3">Label</div>
+              <div className="px-3 py-3">Href</div>
             </div>
 
             {filteredRows.map((row, visualIndex) => (
-              <div key={row.id} className="grid grid-cols-[44px_54px_1.2fr_1.7fr_1fr_1fr_1.1fr_1.1fr_.7fr_.9fr] border-b border-[#dcdcdc] text-[12px] text-[#4f4f4f]">
+              <div key={row.id} className="grid grid-cols-[44px_54px_.8fr_.8fr_1.3fr_2fr] border-b border-[#dcdcdc] text-[12px] text-[#4f4f4f]">
                 <div className="border-r border-[#dedede] px-3 py-3 text-center font-semibold">{visualIndex + 1}</div>
                 <div className="border-r border-[#dedede] px-3 py-3 text-center">
                   <input
@@ -432,6 +419,8 @@ export default function AdminPage() {
                     className="h-3.5 w-3.5 accent-black"
                   />
                 </div>
+                <div className="border-r border-[#dedede] px-3 py-3 font-semibold uppercase text-[#616161]">{row.type}</div>
+                <div className="border-r border-[#dedede] px-3 py-3 font-semibold uppercase text-[#616161]">{row.key}</div>
                 <div className="border-r border-[#dedede] px-2 py-2">
                   <input
                     value={row.label}
@@ -450,7 +439,7 @@ export default function AdminPage() {
                     className="h-8 w-full border border-[#d8d8d8] bg-[#f8f8f8] px-2 text-[12px] font-semibold text-[#414141] outline-none"
                   />
                 </div>
-                <div className="border-r border-[#dedede] px-2 py-2">
+                <div className="px-2 py-2">
                   <input
                     value={row.value}
                     onChange={(event) => {
@@ -468,12 +457,6 @@ export default function AdminPage() {
                     className="h-8 w-full border border-[#d8d8d8] bg-[#f8f8f8] px-2 text-[12px] font-semibold text-[#414141] outline-none"
                   />
                 </div>
-                <div className="border-r border-[#dedede] px-3 py-3 font-semibold">{row.tokenUsed}</div>
-                <div className="border-r border-[#dedede] px-3 py-3 font-semibold">{row.amountSpent}</div>
-                <div className="border-r border-[#dedede] px-3 py-3 font-semibold">{row.ticket}</div>
-                <div className="border-r border-[#dedede] px-3 py-3 font-semibold">{row.type === "nav" ? "Navigation item" : "Home folder tile"}</div>
-                <div className="border-r border-[#dedede] px-3 py-3 font-semibold">{row.scarcity}</div>
-                <div className="px-3 py-3 font-semibold">{tableDate}</div>
               </div>
             ))}
           </div>

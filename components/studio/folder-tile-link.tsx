@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useCallback, useState } from "react"
 
+import { trackCmsClick } from "@/lib/track-click"
 import { type FolderTile } from "@/lib/studio-data"
 
 import { FolderIcon } from "./folder-icon"
@@ -25,6 +26,9 @@ export function FolderTileLink({ folder }: FolderTileLinkProps) {
       className="group flex flex-col items-center text-center"
       onMouseEnter={triggerLabelAnimation}
       onFocus={triggerLabelAnimation}
+      onClick={() => {
+        trackCmsClick({ source: "folder", label: folder.label, href: folder.href })
+      }}
     >
       <FolderIcon color={folder.color} className="h-[76px] w-[92px]" />
       <RandomizedLabel

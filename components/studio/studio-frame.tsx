@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react"
 
 import { defaultCmsPublicData } from "@/lib/cms-types"
+import { trackCmsClick } from "@/lib/track-click"
 import { type FolderTile, type NavItem, type NavKey } from "@/lib/studio-data"
 
 type StudioFrameProps = {
@@ -138,6 +139,7 @@ export function StudioFrame({
   const runCommand = (command: CommandTarget) => {
     setIsCommandOpen(false)
     setCommandQuery("")
+    trackCmsClick({ source: "command", label: command.label, href: command.href })
 
     if (command.external || command.href.startsWith("mailto:") || command.href.startsWith("http")) {
       window.location.href = command.href
@@ -154,6 +156,11 @@ export function StudioFrame({
 
     const exact = commandTargets.find((command) => command.aliases.some((alias) => normalizeCommand(alias) === normalized))
     if (exact) runCommand(exact)
+  }
+
+  const handleNavItemClick = (item: NavItem) => {
+    setIsMobileMenuOpen(false)
+    trackCmsClick({ source: "nav", label: item.label, href: item.href })
   }
 
   const emitLabsColumnsChange = (delta: -1 | 1) => {
@@ -215,12 +222,12 @@ export function StudioFrame({
 
             return (
               item.external ? (
-                <a key={item.key} href={item.href} className={itemClassName} style={itemStyle} onClick={() => setIsMobileMenuOpen(false)}>
+                <a key={item.key} href={item.href} className={itemClassName} style={itemStyle} onClick={() => handleNavItemClick(item)}>
                   <span className={homeBadgeClassName}>{isActive ? `[ ${item.label} ]` : item.label}</span>
                   {isActive ? <span className={`pantom-blue-blink absolute right-0 top-0.5 size-2 ${isNavCollapsed ? "bg-[#0b43b8]" : "bg-[#2067ff]"}`} /> : null}
                 </a>
               ) : (
-                <Link key={item.key} href={item.href} className={itemClassName} style={itemStyle} onClick={() => setIsMobileMenuOpen(false)}>
+                <Link key={item.key} href={item.href} className={itemClassName} style={itemStyle} onClick={() => handleNavItemClick(item)}>
                   <span className={homeBadgeClassName}>{isActive ? `[ ${item.label} ]` : item.label}</span>
                   {isActive ? <span className={`pantom-blue-blink absolute right-0 top-0.5 size-2 ${isNavCollapsed ? "bg-[#0b43b8]" : "bg-[#2067ff]"}`} /> : null}
                 </Link>
