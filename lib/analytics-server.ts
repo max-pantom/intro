@@ -112,7 +112,7 @@ function normalizeMetricName(value: unknown) {
   return ""
 }
 
-function normalizeEvent(input: Partial<AnalyticsEvent>): AnalyticsEvent | null {
+function normalizeEvent(input: Omit<Partial<AnalyticsEvent>, "meta"> & { meta?: Partial<AnalyticsEvent["meta"]> }): AnalyticsEvent | null {
   const occurredAt = safeDate(input.occurredAt)?.toISOString()
   if (!occurredAt) return null
 

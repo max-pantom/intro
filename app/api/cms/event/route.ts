@@ -1,6 +1,28 @@
 import { NextResponse } from "next/server"
 
 import { recordAnalyticsEvent } from "@/lib/analytics-server"
+import type { AnalyticsDevice, AnalyticsSource } from "@/lib/analytics-types"
+
+const ANALYTICS_SOURCES: AnalyticsSource[] = ["nav", "folder", "command", "gallery", "outbound", "section", "scroll", "performance", "system", "other"]
+const ANALYTICS_METRICS = ["LCP", "INP", "CLS", "OTHER", ""] as const
+const ANALYTICS_DEVICES: AnalyticsDevice[] = ["mobile", "tablet", "desktop", "bot", "unknown"]
+
+function normalizeSource(value?: string): AnalyticsSource | undefined {
+  if (!value) return undefined
+  return ANALYTICS_SOURCES.includes(value as AnalyticsSource) ? (value as AnalyticsSource) : undefined
+}
+
+function normalizeMetricName(value?: string): "LCP" | "INP" | "CLS" | "OTHER" | "" | undefined {
+  if (typeof value !== "string") return undefined
+  return ANALYTICS_METRICS.includes(value as (typeof ANALYTICS_METRICS)[number])
+    ? (value as "LCP" | "INP" | "CLS" | "OTHER" | "")
+    : undefined
+}
+
+function normalizeDevice(value?: string): AnalyticsDevice | undefined {
+  if (!value) return undefined
+  return ANALYTICS_DEVICES.includes(value as AnalyticsDevice) ? (value as AnalyticsDevice) : undefined
+}
 
 export async function POST(request: Request) {
   const payload = (await request.json().catch(() => null)) as
@@ -26,7 +48,10 @@ export async function POST(request: Request) {
           utmCampaign?: string
           locale?: string
           timezone?: string
+          country?: string
+          city?: string
           userAgent?: string
+          device?: string
           metricName?: string
         }
       }
@@ -36,23 +61,29 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Missing event name." }, { status: 400 })
   }
 
+  const normalizedMeta = payload.meta
+    ? {
+        referrer: payload.meta.referrer,
+        referrerHost: payload.meta.referrerHost,
+        utmSource: payload.meta.utmSource,
+        utmMedium: payload.meta.utmMedium,
+        utmCampaign: payload.meta.utmCampaign,
+        locale: payload.meta.locale,
+        timezone: payload.meta.timezone,
+        country: payload.meta.country,
+        city: payload.meta.city,
+        userAgent: payload.meta.userAgent,
+        device: normalizeDevice(payload.meta.device),
+        metricName: normalizeMetricName(payload.meta.metricName),
+      }
+    : undefined
+
   await recordAnalyticsEvent(
     {
       eventName: payload.eventName,
       sessionId: payload.sessionId,
       path: payload.path,
-      source: payload.source as
-        | "nav"
-        | "folder"
-        | "command"
-        | "gallery"
-        | "outbound"
-        | "section"
-        | "scroll"
-        | "performance"
-        | "system"
-        | "other"
-        | undefined,
+      source: normalizeSource(payload.source),
       sourceContext: payload.sourceContext,
       label: payload.label,
       href: payload.href,
@@ -62,7 +93,7 @@ export async function POST(request: Request) {
       value: payload.value,
       durationMs: payload.durationMs,
       occurredAt: payload.occurredAt,
-      meta: payload.meta,
+      meta: normalizedMeta,
     },
     request.headers,
   )

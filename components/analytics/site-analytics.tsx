@@ -315,7 +315,7 @@ export function SiteAnalytics() {
             inpValue = Math.max(inpValue, entry.duration ?? 0)
           }
         })
-        inpObserver.observe({ type: "event", buffered: true, durationThreshold: 40 })
+        inpObserver.observe({ type: "event", buffered: true })
         observers.push(inpObserver)
       } catch {
         // No-op.

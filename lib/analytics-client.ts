@@ -1,6 +1,6 @@
 "use client"
 
-import type { AnalyticsSource, RecordAnalyticsEventInput } from "@/lib/analytics-types"
+import type { AnalyticsDevice, AnalyticsSource, RecordAnalyticsEventInput } from "@/lib/analytics-types"
 
 const SESSION_KEY = "pantom_analytics_session"
 
@@ -13,7 +13,7 @@ function parseHost(value: string) {
   }
 }
 
-function classifyDevice(userAgent: string) {
+function classifyDevice(userAgent: string): AnalyticsDevice {
   const ua = userAgent.toLowerCase()
   if (/ipad|tablet|nexus 7|nexus 10|sm-t|kindle/.test(ua)) return "tablet"
   if (/iphone|android|mobile|ipod/.test(ua)) return "mobile"
@@ -35,7 +35,7 @@ export function getAnalyticsSessionId() {
   return next
 }
 
-function getBaseMeta() {
+function getBaseMeta(): NonNullable<RecordAnalyticsEventInput["meta"]> {
   if (typeof window === "undefined") {
     return {
       referrer: "",

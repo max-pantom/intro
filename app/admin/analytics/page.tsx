@@ -6,6 +6,9 @@ import { useEffect, useMemo, useState } from "react"
 import type { AnalyticsSummary } from "@/lib/analytics-types"
 
 const EMPTY_SUMMARY: AnalyticsSummary = {
+  generatedAt: "",
+  realTimeViews: 0,
+  totalEvents: 0,
   totalClicks: 0,
   last24hClicks: 0,
   uniqueTargets: 0,
@@ -18,6 +21,44 @@ const EMPTY_SUMMARY: AnalyticsSummary = {
   ],
   dailyClicks: [],
   hourlyClicks: [],
+  weeklyTrends: [],
+  conversionFunnel: {
+    landingSessions: 0,
+    caseStudySessions: 0,
+    contactSectionSessions: 0,
+    contactClickSessions: 0,
+    landingToCaseRate: 0,
+    caseToContactRate: 0,
+    contactToClickRate: 0,
+  },
+  topContent: [],
+  outboundQuality: [],
+  scrollDepthByPage: [],
+  sectionVisibility: [],
+  audienceSegments: {
+    byDevice: [],
+    bySource: [],
+    byCountry: [],
+    byHour: [],
+  },
+  contentImpact: {
+    latestPublishAt: null,
+    beforeCtr: 0,
+    afterCtr: 0,
+    deltaPct: 0,
+  },
+  performanceVitals: {
+    byPage: [],
+    correlation: {
+      poorVitalsBounceRate: 0,
+      goodVitalsBounceRate: 0,
+    },
+  },
+  anomalyAlerts: [],
+  botStats: {
+    filteredEvents: 0,
+    botSharePct: 0,
+  },
   recentEvents: [],
 }
 
@@ -250,7 +291,7 @@ export default function AdminAnalyticsPage() {
                 {summary.recentEvents.map((event, index) => (
                   <div key={`${event.occurredAt}-${index}`} className="grid grid-cols-[130px_100px_1.2fr_2fr] border-b border-[#dcdcdc] text-[11px] text-[#4f4f4f]">
                     <div className="border-r border-[#dedede] px-3 py-2 font-semibold">{new Date(event.occurredAt).toLocaleTimeString()}</div>
-                    <div className="border-r border-[#dedede] px-3 py-2 font-semibold uppercase">{event.source}</div>
+                    <div className="border-r border-[#dedede] px-3 py-2 font-semibold uppercase">{event.sourceContext || "-"}</div>
                     <div className="truncate border-r border-[#dedede] px-3 py-2">{event.label}</div>
                     <div className="truncate px-3 py-2">{event.href}</div>
                   </div>
