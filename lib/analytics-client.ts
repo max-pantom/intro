@@ -3,6 +3,15 @@
 import type { AnalyticsDevice, AnalyticsSource, RecordAnalyticsEventInput } from "@/lib/analytics-types"
 
 const SESSION_KEY = "pantom_analytics_session"
+const ANALYTICS_ENDPOINT = "/api/cms/event"
+const FLUSH_INTERVAL_MS = 4000
+const MAX_BATCH_SIZE = 20
+const MAX_QUEUE_SIZE = 200
+
+let queuedEvents: RecordAnalyticsEventInput[] = []
+let flushTimerId: number | null = null
+let isFlushing = false
+let lifecycleListenersRegistered = false
 
 function parseHost(value: string) {
   if (!value) return ""
@@ -71,6 +80,77 @@ function getBaseMeta(): NonNullable<RecordAnalyticsEventInput["meta"]> {
   }
 }
 
+function sendBatch(events: RecordAnalyticsEventInput[], preferBeacon: boolean) {
+  if (events.length === 0) return Promise.resolve(true)
+
+  const body = JSON.stringify({ events })
+
+  if (preferBeacon && typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
+    const blob = new Blob([body], { type: "application/json" })
+    if (navigator.sendBeacon(ANALYTICS_ENDPOINT, blob)) {
+      return Promise.resolve(true)
+    }
+  }
+
+  return fetch(ANALYTICS_ENDPOINT, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body,
+    keepalive: true,
+  })
+    .then((response) => response.ok)
+    .catch(() => false)
+}
+
+function scheduleFlush() {
+  if (typeof window === "undefined") return
+  if (flushTimerId !== null) return
+  if (queuedEvents.length === 0) return
+
+  flushTimerId = window.setTimeout(() => {
+    flushTimerId = null
+    void flushQueue(false)
+  }, FLUSH_INTERVAL_MS)
+}
+
+async function flushQueue(preferBeacon: boolean) {
+  if (isFlushing || queuedEvents.length === 0) return
+  isFlushing = true
+
+  try {
+    while (queuedEvents.length > 0) {
+      const batch = queuedEvents.slice(0, MAX_BATCH_SIZE)
+      const ok = await sendBatch(batch, preferBeacon)
+      if (!ok) break
+      queuedEvents = queuedEvents.slice(batch.length)
+      if (preferBeacon) break
+    }
+  } finally {
+    isFlushing = false
+  }
+
+  if (queuedEvents.length > 0) {
+    scheduleFlush()
+  }
+}
+
+function registerLifecycleFlushListeners() {
+  if (lifecycleListenersRegistered || typeof window === "undefined") return
+  lifecycleListenersRegistered = true
+
+  const flushNow = () => {
+    void flushQueue(true)
+  }
+
+  window.addEventListener("pagehide", flushNow)
+  window.addEventListener("beforeunload", flushNow)
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") {
+      flushNow()
+    }
+  })
+}
+
 export function sendAnalyticsEvent(event: RecordAnalyticsEventInput) {
   if (typeof window === "undefined") return
 
@@ -85,21 +165,19 @@ export function sendAnalyticsEvent(event: RecordAnalyticsEventInput) {
     },
   }
 
-  const body = JSON.stringify(payload)
+  registerLifecycleFlushListeners()
 
-  if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
-    const blob = new Blob([body], { type: "application/json" })
-    if (navigator.sendBeacon("/api/cms/event", blob)) {
-      return
-    }
+  queuedEvents.push(payload)
+  if (queuedEvents.length > MAX_QUEUE_SIZE) {
+    queuedEvents = queuedEvents.slice(queuedEvents.length - MAX_QUEUE_SIZE)
   }
 
-  void fetch("/api/cms/event", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body,
-    keepalive: true,
-  }).catch(() => undefined)
+  if (queuedEvents.length >= MAX_BATCH_SIZE) {
+    void flushQueue(false)
+    return
+  }
+
+  scheduleFlush()
 }
 
 export function sendAnalyticsClick(payload: {

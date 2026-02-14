@@ -335,7 +335,7 @@ export function SiteAnalytics() {
         path: pathname,
         sessionId: sessionIdRef.current,
       })
-    }, 15000)
+    }, 30000)
 
     let lcpValue = 0
     let clsValue = 0

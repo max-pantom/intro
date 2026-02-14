@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react"
 
 import { defaultCmsPublicData } from "@/lib/cms-types"
+import { fetchCmsPublicData } from "@/lib/cms-public-client"
 import { trackCmsClick } from "@/lib/track-click"
 import { type FolderTile, type NavItem, type NavKey } from "@/lib/studio-data"
 
@@ -97,20 +98,17 @@ export function StudioFrame({
   const frameStyle: CSSProperties = { backgroundColor: backgroundColor ?? "#ececec" }
 
   useEffect(() => {
-    const controller = new AbortController()
+    let isMounted = true
 
-    fetch("/api/cms/public", { cache: "no-store", signal: controller.signal })
-      .then((response) => {
-        if (!response.ok) return null
-        return response.json() as Promise<{ navItems?: NavItem[]; homeFolderTiles?: FolderTile[] }>
-      })
-      .then((payload) => {
-        if (payload?.navItems?.length) setCurrentNavItems(payload.navItems)
-        if (payload?.homeFolderTiles?.length) setCurrentFolderTiles(payload.homeFolderTiles)
-      })
-      .catch(() => undefined)
+    void fetchCmsPublicData().then((payload) => {
+      if (!isMounted) return
+      if (payload?.navItems?.length) setCurrentNavItems(payload.navItems)
+      if (payload?.homeFolderTiles?.length) setCurrentFolderTiles(payload.homeFolderTiles)
+    })
 
-    return () => controller.abort()
+    return () => {
+      isMounted = false
+    }
   }, [])
 
   useEffect(() => {

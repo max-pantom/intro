@@ -4,27 +4,25 @@ import { useEffect, useState } from "react"
 
 import { FolderTileLink } from "@/components/studio/folder-tile-link"
 import { StudioFrame } from "@/components/studio/studio-frame"
+import { fetchCmsPublicData } from "@/lib/cms-public-client"
 import { homeFolderTiles } from "@/lib/studio-data"
 
 export default function HomePage() {
   const [folders, setFolders] = useState(homeFolderTiles)
 
   useEffect(() => {
-    const controller = new AbortController()
+    let isMounted = true
 
-    fetch("/api/cms/public", { cache: "no-store", signal: controller.signal })
-      .then((response) => {
-        if (!response.ok) return null
-        return response.json() as Promise<{ homeFolderTiles?: typeof homeFolderTiles }>
-      })
-      .then((payload) => {
-        if (payload?.homeFolderTiles?.length) {
-          setFolders(payload.homeFolderTiles)
-        }
-      })
-      .catch(() => undefined)
+    void fetchCmsPublicData().then((payload) => {
+      if (!isMounted) return
+      if (payload?.homeFolderTiles?.length) {
+        setFolders(payload.homeFolderTiles)
+      }
+    })
 
-    return () => controller.abort()
+    return () => {
+      isMounted = false
+    }
   }, [])
 
   return (

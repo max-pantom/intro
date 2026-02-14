@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { useCallback, useEffect, useMemo, useState } from "react"
 
 import type { AnalyticsSummary } from "@/lib/analytics-types"
@@ -39,6 +40,7 @@ const EMPTY_SUMMARY: AnalyticsSummary = {
     byDevice: [],
     bySource: [],
     byCountry: [],
+    byDeviceLocation: [],
     byHour: [],
   },
   contentImpact: {
@@ -88,6 +90,10 @@ export default function AdminAnalyticsPage() {
   const [isUnauthorized, setIsUnauthorized] = useState(false)
   const [errorMessage, setErrorMessage] = useState("")
   const [days, setDays] = useState(14)
+  const [hoveredDailyIndex, setHoveredDailyIndex] = useState<number | null>(null)
+  const [hoveredHourlyIndex, setHoveredHourlyIndex] = useState<number | null>(null)
+  const [activeSource, setActiveSource] = useState<string | null>(null)
+  const [deviceFilter, setDeviceFilter] = useState<string>("all")
 
   const loadSummary = useCallback(async () => {
     setIsLoading(true)
@@ -133,7 +139,12 @@ export default function AdminAnalyticsPage() {
     return { maxValue, points }
   }, [summary.dailyClicks])
 
+  const activeDailyIndex = hoveredDailyIndex ?? (summary.dailyClicks.length > 0 ? summary.dailyClicks.length - 1 : null)
+  const activeDailyPoint = activeDailyIndex !== null ? summary.dailyClicks[activeDailyIndex] : null
+
   const hourlyMax = useMemo(() => Math.max(...summary.hourlyClicks.map((point) => point.clicks), 1), [summary.hourlyClicks])
+  const activeHourlyIndex = hoveredHourlyIndex ?? (summary.hourlyClicks.length > 0 ? summary.hourlyClicks.length - 1 : null)
+  const activeHourlyPoint = activeHourlyIndex !== null ? summary.hourlyClicks[activeHourlyIndex] : null
 
   const trackedSourceStats = useMemo(() => {
     const sourceMap = new Map(summary.sourceBreakdown.map((row) => [row.source, row.clicks]))
@@ -149,6 +160,17 @@ export default function AdminAnalyticsPage() {
     () => [...summary.audienceSegments.byDevice].sort((a, b) => b.sessions - a.sessions),
     [summary.audienceSegments.byDevice],
   )
+
+  const availableDeviceFilters = useMemo(
+    () => ["all", ...Array.from(new Set(summary.audienceSegments.byDeviceLocation.map((row) => row.device)))],
+    [summary.audienceSegments.byDeviceLocation],
+  )
+
+  const filteredDeviceLocations = useMemo(() => {
+    const source = summary.audienceSegments.byDeviceLocation
+    const filtered = deviceFilter === "all" ? source : source.filter((row) => row.device === deviceFilter)
+    return filtered.slice(0, 50)
+  }, [deviceFilter, summary.audienceSegments.byDeviceLocation])
 
   if (isLoading) {
     return (
@@ -200,6 +222,10 @@ export default function AdminAnalyticsPage() {
             >
               Refresh
             </button>
+            <Link href="/" className="inline-flex h-8 items-center gap-2 border border-[#c9c9c9] bg-[#f7f7f7] px-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#636363]">
+              <Image src="/globe.svg" alt="Site" width={14} height={14} className="h-[14px] w-[14px]" />
+              Site
+            </Link>
             <Link href="/admin" className="inline-flex h-8 items-center border border-[#c9c9c9] bg-[#f7f7f7] px-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#636363]">
               Back To CMS
             </Link>
@@ -239,11 +265,35 @@ export default function AdminAnalyticsPage() {
                 {dailyChart.points ? (
                   <polyline fill="none" stroke="#4e6acc" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" points={dailyChart.points} />
                 ) : null}
+                {summary.dailyClicks.map((point, index) => {
+                  const x = summary.dailyClicks.length > 1 ? (700 / (summary.dailyClicks.length - 1)) * index : 350
+                  const y = 180 - (point.clicks / dailyChart.maxValue) * 180
+                  const isActive = index === activeDailyIndex
+                  return (
+                    <g key={`${point.label}-${index}`}>
+                      <circle cx={x} cy={y} r={isActive ? 5.2 : 3.4} fill={isActive ? "#1f3fbe" : "#6a86de"} />
+                      <rect
+                        x={x - 12}
+                        y={0}
+                        width={24}
+                        height={180}
+                        fill="transparent"
+                        onMouseEnter={() => setHoveredDailyIndex(index)}
+                        onMouseMove={() => setHoveredDailyIndex(index)}
+                        onMouseLeave={() => setHoveredDailyIndex(null)}
+                      />
+                    </g>
+                  )
+                })}
               </svg>
               <div className="mt-2 flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.08em] text-[#8c8c8c]">
                 <span>{summary.dailyClicks[0]?.label ?? "-"}</span>
                 <span>Peak {dailyChart.maxValue}</span>
                 <span>{summary.dailyClicks.at(-1)?.label ?? "-"}</span>
+              </div>
+              <div className="mt-1 text-[11px] text-[#616161]">
+                <span className="font-semibold">Focus:</span>{" "}
+                {activeDailyPoint ? `${activeDailyPoint.label} - ${activeDailyPoint.clicks} clicks` : "No daily data"}
               </div>
             </div>
           </div>
@@ -252,14 +302,23 @@ export default function AdminAnalyticsPage() {
             <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#858585]">Source Breakdown</p>
             <div className="mt-3 space-y-2">
               {summary.sourceBreakdown.map((row) => (
-                <div key={row.source} className="border border-[#d8d8d8] bg-[#f5f5f5] p-2">
+                <div
+                  key={row.source}
+                  onMouseEnter={() => setActiveSource(row.source)}
+                  onMouseLeave={() => setActiveSource(null)}
+                  className={`border border-[#d8d8d8] p-2 transition-colors ${activeSource === row.source ? "bg-[#edf2ff]" : "bg-[#f5f5f5]"}`}
+                >
                   <div className="flex items-center justify-between text-[11px] font-semibold text-[#595959]">
                     <span className="uppercase tracking-[0.08em]">{row.source}</span>
                     <span>{row.clicks}</span>
                   </div>
                   <div className="mt-1 h-2 w-full bg-[#e4e4e4]">
-                    <div className="h-2 bg-[#7d8ecf]" style={{ width: formatPercent(row.clicks, summary.totalClicks) }} />
+                    <div
+                      className={`h-2 transition-all duration-150 ${activeSource === row.source ? "bg-[#3254c4]" : "bg-[#7d8ecf]"}`}
+                      style={{ width: formatPercent(row.clicks, summary.totalClicks) }}
+                    />
                   </div>
+                  <p className="mt-1 text-[10px] uppercase tracking-[0.07em] text-[#7c7c7c]">{formatPercent(row.clicks, summary.totalClicks)} of tracked clicks</p>
                 </div>
               ))}
             </div>
@@ -270,11 +329,28 @@ export default function AdminAnalyticsPage() {
           <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#858585]">Hourly Clicks (Last 24 Hours)</p>
           <div className="mt-3 flex h-[180px] items-end gap-1 overflow-x-auto border border-[#d8d8d8] bg-[#f5f5f5] p-2">
             {summary.hourlyClicks.map((point, index) => (
-              <div key={`${point.label}-${index}`} className="flex min-w-6 flex-1 flex-col items-center justify-end gap-1">
-                <div className="w-full bg-[#7d8ecf]" style={{ height: `${Math.max(2, (point.clicks / hourlyMax) * 130)}px` }} title={`${point.label}: ${point.clicks}`} />
+              <button
+                key={`${point.label}-${index}`}
+                type="button"
+                onMouseEnter={() => setHoveredHourlyIndex(index)}
+                onMouseMove={() => setHoveredHourlyIndex(index)}
+                onMouseLeave={() => setHoveredHourlyIndex(null)}
+                onFocus={() => setHoveredHourlyIndex(index)}
+                onBlur={() => setHoveredHourlyIndex(null)}
+                className="flex min-w-6 flex-1 flex-col items-center justify-end gap-1"
+              >
+                <div
+                  className={`w-full transition-colors ${index === activeHourlyIndex ? "bg-[#3152c3]" : "bg-[#7d8ecf]"}`}
+                  style={{ height: `${Math.max(2, (point.clicks / hourlyMax) * 130)}px` }}
+                  title={`${point.label}: ${point.clicks}`}
+                />
                 <span className="text-[9px] text-[#8a8a8a]">{index % 3 === 0 ? point.label : ""}</span>
-              </div>
+              </button>
             ))}
+          </div>
+          <div className="mt-1 text-[11px] text-[#616161]">
+            <span className="font-semibold">Focus:</span>{" "}
+            {activeHourlyPoint ? `${activeHourlyPoint.label} - ${activeHourlyPoint.clicks} clicks` : "No hourly data"}
           </div>
         </section>
 
@@ -321,6 +397,47 @@ export default function AdminAnalyticsPage() {
                 ))}
                 {deviceStats.length === 0 ? <div className="px-3 py-3 text-[11px] text-[#757575]">No device data yet.</div> : null}
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-3 border border-[#dbdbdb] bg-[#ececec]">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#d9d9d9] bg-[#ebebeb] px-3 py-2">
+            <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#858585]">Device Location Breakdown</p>
+            <label className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#7a7a7a]">
+              Device
+              <select
+                value={deviceFilter}
+                onChange={(event) => setDeviceFilter(event.target.value)}
+                className="h-7 border border-[#c9c9c9] bg-[#f7f7f7] px-2 text-[10px] font-semibold uppercase tracking-[0.06em] text-[#636363]"
+              >
+                {availableDeviceFilters.map((option) => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <div className="overflow-x-auto">
+            <div className="min-w-[760px]">
+              <div className="grid grid-cols-[100px_130px_1.2fr_100px_100px_130px] border-b border-[#dcdcdc] text-[11px] font-semibold text-[#8a8a8a]">
+                <div className="border-r border-[#dedede] px-3 py-2">Device</div>
+                <div className="border-r border-[#dedede] px-3 py-2">Country</div>
+                <div className="border-r border-[#dedede] px-3 py-2">City</div>
+                <div className="border-r border-[#dedede] px-3 py-2">Sessions</div>
+                <div className="border-r border-[#dedede] px-3 py-2">Clicks</div>
+                <div className="px-3 py-2">Contact Clicks</div>
+              </div>
+              {filteredDeviceLocations.map((row, index) => (
+                <div key={`${row.device}-${row.country}-${row.city}-${index}`} className="grid grid-cols-[100px_130px_1.2fr_100px_100px_130px] border-b border-[#dcdcdc] text-[11px] text-[#4f4f4f]">
+                  <div className="border-r border-[#dedede] px-3 py-2 font-semibold uppercase">{row.device}</div>
+                  <div className="border-r border-[#dedede] px-3 py-2 uppercase">{row.country}</div>
+                  <div className="truncate border-r border-[#dedede] px-3 py-2">{row.city}</div>
+                  <div className="border-r border-[#dedede] px-3 py-2">{row.sessions.toLocaleString()}</div>
+                  <div className="border-r border-[#dedede] px-3 py-2">{row.clicks.toLocaleString()}</div>
+                  <div className="px-3 py-2">{row.contactClicks.toLocaleString()}</div>
+                </div>
+              ))}
+              {filteredDeviceLocations.length === 0 ? <div className="px-3 py-3 text-[11px] text-[#757575]">No location data yet.</div> : null}
             </div>
           </div>
         </section>
