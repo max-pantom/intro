@@ -698,6 +698,14 @@ export async function getAnalyticsSummary(days = 14): Promise<AnalyticsSummary> 
   const segmentByDevice = new Map<string, { sessions: Set<string>; clicks: number; contactClicks: number }>()
   const segmentBySource = new Map<string, { sessions: Set<string>; clicks: number; contactClicks: number }>()
   const segmentByCountry = new Map<string, { sessions: Set<string>; clicks: number; contactClicks: number }>()
+  const segmentByDeviceLocation = new Map<string, {
+    device: string
+    country: string
+    city: string
+    sessions: Set<string>
+    clicks: number
+    contactClicks: number
+  }>()
 
   const byHour = new Map<string, number>()
 
@@ -752,9 +760,12 @@ export async function getAnalyticsSummary(days = 14): Promise<AnalyticsSummary> 
     }
 
     let hasContactClick = false
+    let sessionClickCount = 0
+    let sessionContactClickCount = 0
 
     for (const event of sessionEvents) {
       if (isClickLike(event)) {
+        sessionClickCount += 1
         const sourceBucket = segmentBySource.get(event.meta.utmSource || event.meta.referrerHost || "direct")
         if (sourceBucket) sourceBucket.clicks += 1
 
@@ -782,6 +793,7 @@ export async function getAnalyticsSummary(days = 14): Promise<AnalyticsSummary> 
 
         if (isContactHref(event.href)) {
           hasContactClick = true
+          sessionContactClickCount += 1
           const hourLabel = new Date(event.occurredAt).getHours().toString().padStart(2, "0")
           byHour.set(hourLabel, (byHour.get(hourLabel) ?? 0) + 1)
 
@@ -850,6 +862,25 @@ export async function getAnalyticsSummary(days = 14): Promise<AnalyticsSummary> 
           stat.followThroughSessions.add(sessionId)
         }
       }
+    }
+
+    if (firstEvent) {
+      const deviceLabel = firstEvent.meta.device || "unknown"
+      const countryLabel = firstEvent.meta.country || "unknown"
+      const cityLabel = firstEvent.meta.city || "unknown"
+      const deviceLocationKey = `${deviceLabel}::${countryLabel}::${cityLabel}`
+      const current = segmentByDeviceLocation.get(deviceLocationKey) ?? {
+        device: deviceLabel,
+        country: countryLabel,
+        city: cityLabel,
+        sessions: new Set<string>(),
+        clicks: 0,
+        contactClicks: 0,
+      }
+      current.sessions.add(sessionId)
+      current.clicks += sessionClickCount
+      current.contactClicks += sessionContactClickCount
+      segmentByDeviceLocation.set(deviceLocationKey, current)
     }
   }
 
@@ -921,6 +952,18 @@ export async function getAnalyticsSummary(days = 14): Promise<AnalyticsSummary> 
     const key = hour.toString().padStart(2, "0")
     return { hour: `${key}:00`, clicks: byHour.get(key) ?? 0 }
   })
+
+  const byDeviceLocationRows = Array.from(segmentByDeviceLocation.values())
+    .map((entry) => ({
+      device: entry.device,
+      country: entry.country,
+      city: entry.city,
+      sessions: entry.sessions.size,
+      clicks: entry.clicks,
+      contactClicks: entry.contactClicks,
+    }))
+    .sort((a, b) => b.sessions - a.sessions)
+    .slice(0, 80)
 
   const cmsPublishEvents = events
     .filter((event) => event.eventName === "cms_publish")
@@ -1087,6 +1130,7 @@ export async function getAnalyticsSummary(days = 14): Promise<AnalyticsSummary> 
       byDevice: toSegmentRows(segmentByDevice),
       bySource: toSegmentRows(segmentBySource),
       byCountry: toSegmentRows(segmentByCountry),
+      byDeviceLocation: byDeviceLocationRows,
       byHour: byHourRows,
     },
     contentImpact: {

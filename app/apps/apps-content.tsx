@@ -1,9 +1,9 @@
 "use client"
 
-import Image from "next/image"
 import { useRef, useState } from "react"
 
 import { FolderIcon } from "@/components/studio/folder-icon"
+import { PixelatedImage } from "@/components/ui/pixelated-image"
 
 type AppsContentProps = {
   appsImages: string[]
@@ -46,7 +46,7 @@ export function AppsContent({ appsImages, cardsToRender }: AppsContentProps) {
                 data-analytics-item-label={src ?? ""}
               >
                 {src ? (
-                  <Image
+                  <PixelatedImage
                     src={src}
                     alt=""
                     width={0}

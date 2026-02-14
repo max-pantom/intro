@@ -1,6 +1,5 @@
 "use client"
 
-import Image from "next/image"
 import Link from "next/link"
 import {
   memo,
@@ -16,6 +15,7 @@ import {
 
 import { FolderIcon, type FolderColor } from "@/components/studio/folder-icon"
 import { StudioFrame } from "@/components/studio/studio-frame"
+import { PixelatedImage } from "@/components/ui/pixelated-image"
 import type { NavKey } from "@/lib/studio-data"
 
 type UnderConstructionPageProps = {
@@ -385,7 +385,7 @@ const RetroGifWindow = memo(function RetroGifWindow({
         <span className="h-2 w-2 border border-[#0d0d0d] bg-[#c6c6c6]" />
       </div>
       {animated ? (
-        <Image
+        <PixelatedImage
           src={source}
           alt="Animated under-construction frame"
           width={320}
@@ -580,7 +580,7 @@ export function UnderConstructionPage({
             onCloseAttempt={handleWindowCloseAttempt}
           >
             <div className="relative overflow-hidden border border-black/15">
-              <Image src={livePreviewGif} alt="Animated studio preview feed" width={320} height={424} unoptimized className="h-[170px] w-full object-cover" />
+              <PixelatedImage src={livePreviewGif} alt="Animated studio preview feed" width={320} height={424} unoptimized className="h-[170px] w-full object-cover" />
               <span className="absolute left-2 top-2 border border-white/40 bg-black/55 px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.08em] text-white">
                 live
               </span>
@@ -622,7 +622,7 @@ export function UnderConstructionPage({
             onCloseAttempt={handleWindowCloseAttempt}
           >
             <div className="relative overflow-hidden border border-black/15">
-              <Image src={livePreviewGif} alt="Animated visual snapshot" width={320} height={424} unoptimized className="h-[130px] w-full object-cover" />
+              <PixelatedImage src={livePreviewGif} alt="Animated visual snapshot" width={320} height={424} unoptimized className="h-[130px] w-full object-cover" />
             </div>
           </FloatingWindow>
 
@@ -630,7 +630,7 @@ export function UnderConstructionPage({
             {gifWindowSeeds.slice(0, 8).map((seed) => (
               <div key={`mobile-gif-${seed.id}`} className="border-2 border-[#0d0d0d] bg-[#c6c6c6] shadow-[inset_-1px_-1px_0_#0d0d0d,inset_1px_1px_0_#ffffff]">
                 <div className="border-b border-[#0d0d0d] bg-[#000080] px-1 py-0.5 font-mono text-[8px] uppercase tracking-[0.05em] text-white">gif 28 #{seed.id}</div>
-                <Image
+                <PixelatedImage
                   src={livePreviewGif}
                   alt="Animated mini feed"
                   width={320}

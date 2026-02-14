@@ -1,9 +1,9 @@
 "use client"
 
-import Image from "next/image"
 import { useRef, useState } from "react"
 
 import { FolderIcon } from "@/components/studio/folder-icon"
+import { PixelatedImage } from "@/components/ui/pixelated-image"
 
 type WebsiteContentProps = {
   websiteImages: string[]
@@ -43,7 +43,7 @@ export function WebsiteContent({ websiteImages }: WebsiteContentProps) {
                 data-analytics-item-type="website"
                 data-analytics-item-label={src}
               >
-                <Image
+                <PixelatedImage
                   src={src}
                   alt=""
                   width={0}

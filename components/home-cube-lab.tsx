@@ -1,6 +1,5 @@
 "use client"
 
-import Image from "next/image"
 import { useCallback, useEffect, useMemo, useState } from "react"
 
 import { Button } from "@/components/ui/button"
@@ -13,6 +12,7 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { PixelatedImage } from "@/components/ui/pixelated-image"
 
 const faceOrder = ["front", "right", "left", "top", "back", "bottom"] as const
 type FaceKey = (typeof faceOrder)[number]
@@ -513,7 +513,7 @@ export function HomeCubeLab() {
                     }}
                   >
                     {card.imageSrc && (
-                      <Image
+                      <PixelatedImage
                         src={card.imageSrc}
                         alt=""
                         fill

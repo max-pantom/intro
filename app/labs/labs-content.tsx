@@ -1,7 +1,8 @@
 "use client"
 
-import Image from "next/image"
 import { useEffect, useMemo, useState } from "react"
+
+import { PixelatedImage } from "@/components/ui/pixelated-image"
 
 type LabsContentProps = {
   labImages: string[]
@@ -10,7 +11,7 @@ type LabsContentProps = {
 function LabsTile({ src, sizes, priority }: { src: string; sizes: string; priority?: boolean }) {
   return (
     <article className="overflow-hidden" data-analytics-item-id={src} data-analytics-item-type="labs" data-analytics-item-label={src}>
-      <Image
+      <PixelatedImage
         src={src}
         alt=""
         width={0}

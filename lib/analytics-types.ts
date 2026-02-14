@@ -95,6 +95,15 @@ export type AnalyticsHourStat = {
   clicks: number
 }
 
+export type AnalyticsDeviceLocationStat = {
+  device: string
+  country: string
+  city: string
+  sessions: number
+  clicks: number
+  contactClicks: number
+}
+
 export type AnalyticsFunnel = {
   landingSessions: number
   caseStudySessions: number
@@ -166,6 +175,7 @@ export type AnalyticsSummary = {
     byDevice: AnalyticsSegmentStat[]
     bySource: AnalyticsSegmentStat[]
     byCountry: AnalyticsSegmentStat[]
+    byDeviceLocation: AnalyticsDeviceLocationStat[]
     byHour: AnalyticsHourStat[]
   }
   contentImpact: AnalyticsContentImpact
