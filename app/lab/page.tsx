@@ -1,5 +1,5 @@
-import { PantomCanvasLab } from "@/components/pantom/pantom-canvas-lab"
+import { redirect } from "next/navigation"
 
 export default function LabPage() {
-  return <PantomCanvasLab />
+  redirect("/lab/cube")
 }

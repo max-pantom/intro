@@ -326,17 +326,6 @@ export function SiteAnalytics() {
       itemObserver.observe(element)
     }
 
-    const heartbeatId = window.setInterval(() => {
-      if (document.visibilityState !== "visible") return
-      sendAnalyticsEvent({
-        eventName: "page_heartbeat",
-        source: "other",
-        sourceContext: "realtime",
-        path: pathname,
-        sessionId: sessionIdRef.current,
-      })
-    }, 30000)
-
     let lcpValue = 0
     let clsValue = 0
     let inpValue = 0
@@ -461,7 +450,6 @@ export function SiteAnalytics() {
       document.removeEventListener("visibilitychange", onVisibilityChange)
       document.removeEventListener("click", onDocumentClick, true)
       window.removeEventListener("scroll", onScroll)
-      window.clearInterval(heartbeatId)
       sectionObserver.disconnect()
       itemObserver.disconnect()
       for (const observer of observers) {

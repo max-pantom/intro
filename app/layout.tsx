@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { Agentation } from "agentation";
+import { DialRoot } from "dialkit";
 import { Geist_Mono, Inter, Noto_Serif } from "next/font/google";
 import type { ReactNode } from "react";
 import { SiteAnalytics } from "@/components/analytics/site-analytics";
+import "dialkit/styles.css";
 import "./globals.css";
 
 const inter = Inter({ variable: "--font-sans", subsets: ["latin"] });
@@ -69,9 +71,11 @@ export default function RootLayout({
       <body
         className={`${geistMono.variable} antialiased`}
       >
-        {children}
-        <SiteAnalytics />
-        {process.env.NODE_ENV === "development" && <Agentation />}
+        <DialRoot>
+          {children}
+          <SiteAnalytics />
+          {process.env.NODE_ENV === "development" && <Agentation />}
+        </DialRoot>
       </body>
     </html>
   );
