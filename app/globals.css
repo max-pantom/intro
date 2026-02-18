@@ -167,6 +167,23 @@
   animation: pantom-blue-blink 1.2s ease-in-out infinite;
 }
 
+@keyframes pantom-badge-pulse-black {
+  0%,
+  100% {
+    background-color: #c7c7c7;
+    color: #676767;
+  }
+  50% {
+    background-color: #111111;
+    color: #d8d8d8;
+  }
+}
+
+.pantom-badge-pulse-black {
+  animation: pantom-badge-pulse-black 1.4s ease-in-out infinite;
+}
+
+
 @keyframes pantom-logo-flip {
   0% {
     transform: rotateY(0deg);
@@ -192,6 +209,10 @@
   }
 
   .pantom-blue-blink {
+    animation: none;
+  }
+
+  .pantom-badge-pulse-black {
     animation: none;
   }
 
