@@ -3,6 +3,8 @@
 import { useState } from "react"
 
 import { StudioFrame } from "@/components/studio/studio-frame"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 
 type StepChoice = {
   label: string
@@ -17,7 +19,7 @@ type StepQuestion = {
   options: StepChoice[]
 }
 
-type IntakeAnswers = Record<StepKey, string>
+type IntakeAnswers = Record<StepKey | "name" | "email" | "brief", string>
 
 const stepQuestions: StepQuestion[] = [
   {
@@ -67,6 +69,9 @@ const initialAnswers: IntakeAnswers = {
   stage: "",
   timeline: "",
   budget: "",
+  name: "",
+  email: "",
+  brief: "",
 }
 
 export default function BeNextPage() {
@@ -74,14 +79,19 @@ export default function BeNextPage() {
   const [stepIndex, setStepIndex] = useState(0)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [answers, setAnswers] = useState<IntakeAnswers>(initialAnswers)
-  const activeStep = stepQuestions[stepIndex]
-  const isLastStep = stepIndex === stepQuestions.length - 1
-  const canAdvance = Boolean(activeStep && answers[activeStep.key])
+  const activeStep = stepQuestions[stepIndex] ?? null
+  const isContactStep = stepIndex === stepQuestions.length
+  const hasValidEmail = /\S+@\S+\.\S+/.test(answers.email.trim())
+  const canAdvance = isContactStep
+    ? Boolean(answers.name.trim() && answers.email.trim() && answers.brief.trim() && hasValidEmail)
+    : Boolean(activeStep && answers[activeStep.key])
+  const stepTitle = isContactStep ? "Who should we contact?" : (activeStep?.title ?? "")
 
   const startFlow = () => {
     setHasStarted(true)
     setStepIndex(0)
     setIsSubmitted(false)
+    setAnswers(initialAnswers)
   }
 
   const restartFlow = () => {
@@ -98,7 +108,7 @@ export default function BeNextPage() {
 
   const goForward = () => {
     if (!canAdvance) return
-    if (isLastStep) {
+    if (isContactStep) {
       setIsSubmitted(true)
     } else {
       setStepIndex((value) => value + 1)
@@ -173,49 +183,73 @@ export default function BeNextPage() {
               </button>
             </section>
           ) : (
-            <section className="flex w-full max-w-[880px] flex-col items-center gap-7 md:flex-row md:items-center md:justify-between">
-              <div className="w-full max-w-[420px] space-y-3">
+            <section className="w-full max-w-[560px] translate-y-[-10px]">
+              <div className="space-y-3">
                 <p className="font-mono text-[28px] uppercase leading-none tracking-[0.06em] text-black/16">
                   {String(stepIndex + 1).padStart(2, "0")}
                 </p>
                 <h2 className="font-mono text-[20px] uppercase leading-tight tracking-[0.03em] text-[#111111]">
-                  {activeStep.title}
+                  {stepTitle}
                 </h2>
-                <div className="space-y-[3px]">
-                  {activeStep.options.map((option) => {
-                    const isActive = answers[activeStep.key] === option.value
+                <div className="mx-auto w-full max-w-[420px] space-y-[3px]">
+                  {!isContactStep && activeStep ? (
+                    activeStep.options.map((option) => {
+                      const isActive = answers[activeStep.key] === option.value
 
-                    return (
-                      <button
-                        key={option.value}
-                        type="button"
-                        onClick={() => selectChoice(option.value)}
-                        className={`block w-full border bg-[#252525] px-[8px] py-[7px] text-left font-mono text-[16px] uppercase leading-none tracking-[0.02em] text-white transition ${isActive ? "border-[#ffffff]" : "border-[#a7a7a7]"}`}
-                      >
-                        {option.label}
-                      </button>
-                    )
-                  })}
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => selectChoice(option.value)}
+                          className={`block w-full border bg-[#252525] px-[8px] py-[7px] text-left font-mono text-[16px] uppercase leading-none tracking-[0.02em] text-white transition ${isActive ? "border-[#ffffff]" : "border-[#a7a7a7]"}`}
+                        >
+                          {option.label}
+                        </button>
+                      )
+                    })
+                  ) : (
+                    <div className="space-y-[6px]">
+                      <Input
+                        value={answers.name}
+                        onChange={(event) => setAnswers((current) => ({ ...current, name: event.target.value }))}
+                        placeholder="NAME"
+                        className="h-auto rounded-none border-[#a7a7a7] bg-[#252525] px-[8px] py-[7px] font-mono text-[16px] uppercase tracking-[0.02em] text-white placeholder:text-white/65 focus-visible:border-white focus-visible:ring-0 md:text-[16px]"
+                      />
+                      <Input
+                        type="email"
+                        value={answers.email}
+                        onChange={(event) => setAnswers((current) => ({ ...current, email: event.target.value }))}
+                        placeholder="EMAIL"
+                        className="h-auto rounded-none border-[#a7a7a7] bg-[#252525] px-[8px] py-[7px] font-mono text-[16px] uppercase tracking-[0.02em] text-white placeholder:text-white/65 focus-visible:border-white focus-visible:ring-0 md:text-[16px]"
+                      />
+                      <Textarea
+                        value={answers.brief}
+                        onChange={(event) => setAnswers((current) => ({ ...current, brief: event.target.value }))}
+                        placeholder="A LITTLE BRIEF ABOUT THE PROJECT"
+                        className="min-h-[94px] rounded-none border-[#a7a7a7] bg-[#252525] px-[8px] py-[8px] font-mono text-[14px] tracking-[0.01em] text-white placeholder:text-white/65 focus-visible:border-white focus-visible:ring-0 md:text-[14px]"
+                      />
+                      {answers.email.trim() && !hasValidEmail ? (
+                        <p className="font-mono text-[11px] uppercase tracking-[0.04em] text-black/45">
+                          Enter a valid email address.
+                        </p>
+                      ) : null}
+                    </div>
+                  )}
                 </div>
-                <button
-                  type="button"
-                  onClick={goBack}
-                  className="pt-1 font-mono text-[12px] uppercase tracking-[0.05em] text-black/40 hover:text-black/62"
-                >
-                  {stepIndex === 0 ? "[ Back to intro ]" : "[ Previous ]"}
-                </button>
               </div>
 
-              <div className="flex shrink-0 items-center justify-center md:pr-10">
-                {!isLastStep ? (
+              <div className="mt-5 flex flex-col items-center gap-3">
+                {!isContactStep ? (
                   <button
                     type="button"
                     onClick={goForward}
                     disabled={!canAdvance}
-                    className="group inline-flex size-[62px] items-center justify-center transition disabled:cursor-not-allowed disabled:opacity-25"
+                    className="group inline-flex h-[44px] w-[42px] items-center justify-center transition hover:translate-x-[2px] disabled:cursor-not-allowed disabled:opacity-25 disabled:hover:translate-x-0"
                     aria-label="Next question"
                   >
-                    <span className="h-0 w-0 border-y-[16px] border-y-transparent border-l-[30px] border-l-[#050505] transition-transform duration-150 group-hover:translate-x-[2px]" />
+                    <svg width="42" height="44" viewBox="0 0 42 44" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                      <path d="M41.5 22L0 0L10 22L0 44L41.5 22Z" fill="black" />
+                    </svg>
                   </button>
                 ) : (
                   <button
@@ -227,6 +261,14 @@ export default function BeNextPage() {
                     [ SUBMIT APPLICATION ]
                   </button>
                 )}
+
+                <button
+                  type="button"
+                  onClick={goBack}
+                  className="pt-1 font-mono text-[12px] uppercase tracking-[0.05em] text-black/40 hover:text-black/62"
+                >
+                  {stepIndex === 0 ? "[ Back to intro ]" : "[ Previous ]"}
+                </button>
               </div>
             </section>
           )}
