@@ -68,14 +68,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} ${notoSerif.variable}`}>
-      <body
-        className={`${geistMono.variable} antialiased`}
-      >
-        <DialRoot>
-          {children}
-          <SiteAnalytics />
-          {process.env.NODE_ENV === "development" && <Agentation />}
-        </DialRoot>
+      <body className={`${geistMono.variable} antialiased`}>
+        {children}
+        <SiteAnalytics />
+        {process.env.NODE_ENV === "development" && <Agentation />}
+        <DialRoot />
       </body>
     </html>
   );
