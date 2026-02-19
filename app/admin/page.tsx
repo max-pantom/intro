@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, type MouseEvent } from "react"
 import Image from "next/image"
 import Link from "next/link"
 
-import { defaultCmsPublicData, type CmsPublicData, type GalleryKey } from "@/lib/cms-types"
+import { defaultCmsPublicData, type CmsPublicData, type CmsToolProject, type GalleryKey } from "@/lib/cms-types"
 
 type Status = {
   tone: "idle" | "success" | "error"
@@ -28,11 +28,31 @@ function cloneDefaults(): CmsPublicData {
       apps: [...defaultCmsPublicData.galleries.apps],
       website: [...defaultCmsPublicData.galleries.website],
       labs: [...defaultCmsPublicData.galleries.labs],
+      tools: [...defaultCmsPublicData.galleries.tools],
     },
+    toolsProjects: defaultCmsPublicData.toolsProjects.map((project) => ({
+      ...project,
+      highlightUrls: [...project.highlightUrls],
+    })),
   }
 }
 
-const galleryOptions: GalleryKey[] = ["apps", "website", "labs"]
+const galleryOptions: GalleryKey[] = ["apps", "website", "labs", "tools"]
+
+function buildEmptyToolProject(index: number): CmsToolProject {
+  return {
+    id: `tool-project-${Date.now()}-${index + 1}`,
+    name: `UNTITLED PROJECT ${index + 1}`,
+    tagline: "",
+    description: "",
+    year: `${new Date().getFullYear()}`,
+    status: "ACTIVE",
+    linkLabel: "",
+    linkHref: "",
+    demoUrl: "",
+    highlightUrls: [],
+  }
+}
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -280,6 +300,56 @@ export default function AdminPage() {
       },
     })
     setStatus({ tone: "success", message: "Sorted selected images. Click save to publish." })
+  }
+
+  const updateToolProjectText = (
+    index: number,
+    key: Exclude<keyof CmsToolProject, "highlightUrls">,
+    value: string,
+  ) => {
+    const next = [...cmsData.toolsProjects]
+    const current = next[index]
+    if (!current) return
+
+    next[index] = { ...current, [key]: value }
+    setCmsData({ ...cmsData, toolsProjects: next })
+  }
+
+  const updateToolProjectHighlights = (index: number, highlightUrls: string[]) => {
+    const next = [...cmsData.toolsProjects]
+    const current = next[index]
+    if (!current) return
+
+    next[index] = { ...current, highlightUrls }
+    setCmsData({ ...cmsData, toolsProjects: next })
+  }
+
+  const addToolProject = () => {
+    setCmsData({
+      ...cmsData,
+      toolsProjects: [...cmsData.toolsProjects, buildEmptyToolProject(cmsData.toolsProjects.length)],
+    })
+    setStatus({ tone: "success", message: "New tools project added. Click save to publish." })
+  }
+
+  const removeToolProject = (index: number) => {
+    const next = cmsData.toolsProjects.filter((_, itemIndex) => itemIndex !== index)
+    setCmsData({
+      ...cmsData,
+      toolsProjects: next.length > 0 ? next : [buildEmptyToolProject(0)],
+    })
+    setStatus({ tone: "success", message: "Tools project removed. Click save to publish." })
+  }
+
+  const moveToolProject = (index: number, direction: -1 | 1) => {
+    const nextIndex = index + direction
+    if (nextIndex < 0 || nextIndex >= cmsData.toolsProjects.length) return
+
+    const next = [...cmsData.toolsProjects]
+    const swap = next[nextIndex]
+    next[nextIndex] = next[index] as CmsToolProject
+    next[index] = swap as CmsToolProject
+    setCmsData({ ...cmsData, toolsProjects: next })
   }
 
   const handlePreviewMove = (event: MouseEvent, path: string) => {
@@ -589,6 +659,121 @@ export default function AdminPage() {
                 })}
               </div>
             </div>
+          </div>
+        </section>
+
+        <section className="mt-3 border border-[#dbdbdb] bg-[#ececec] p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#858585]">
+              Tools Projects ({cmsData.toolsProjects.length})
+            </p>
+            <button
+              type="button"
+              onClick={addToolProject}
+              className="h-8 border border-[#c9c9c9] bg-[#f7f7f7] px-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#636363]"
+            >
+              Add Project
+            </button>
+          </div>
+
+          <div className="mt-3 grid gap-3">
+            {cmsData.toolsProjects.map((project, index) => (
+              <article key={`${project.id}-${index}`} className="border border-[#d8d8d8] bg-[#f5f5f5] p-2">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#dfdfdf] pb-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#747474]">
+                    Project {index + 1}
+                  </p>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => moveToolProject(index, -1)}
+                      className="h-6 w-6 border border-[#cfcfcf] bg-[#f7f7f7] text-[11px]"
+                    >
+                      -
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => moveToolProject(index, 1)}
+                      className="h-6 w-6 border border-[#cfcfcf] bg-[#f7f7f7] text-[11px]"
+                    >
+                      +
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeToolProject(index)}
+                      className="h-6 w-6 border border-[#cfcfcf] bg-[#f7f7f7] text-[11px]"
+                    >
+                      x
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-2 grid gap-2 md:grid-cols-2">
+                  <input
+                    value={project.name}
+                    onChange={(event) => updateToolProjectText(index, "name", event.target.value)}
+                    placeholder="Project Name"
+                    className="h-8 w-full border border-[#d8d8d8] bg-[#f8f8f8] px-2 text-[12px] font-semibold text-[#414141] outline-none"
+                  />
+                  <input
+                    value={project.tagline}
+                    onChange={(event) => updateToolProjectText(index, "tagline", event.target.value)}
+                    placeholder="Tagline"
+                    className="h-8 w-full border border-[#d8d8d8] bg-[#f8f8f8] px-2 text-[12px] font-semibold text-[#414141] outline-none"
+                  />
+                  <input
+                    value={project.status}
+                    onChange={(event) => updateToolProjectText(index, "status", event.target.value)}
+                    placeholder="Status Badge"
+                    className="h-8 w-full border border-[#d8d8d8] bg-[#f8f8f8] px-2 text-[12px] font-semibold text-[#414141] outline-none"
+                  />
+                  <input
+                    value={project.year}
+                    onChange={(event) => updateToolProjectText(index, "year", event.target.value)}
+                    placeholder="Year"
+                    className="h-8 w-full border border-[#d8d8d8] bg-[#f8f8f8] px-2 text-[12px] font-semibold text-[#414141] outline-none"
+                  />
+                  <input
+                    value={project.linkLabel}
+                    onChange={(event) => updateToolProjectText(index, "linkLabel", event.target.value)}
+                    placeholder="Meta Link Label"
+                    className="h-8 w-full border border-[#d8d8d8] bg-[#f8f8f8] px-2 text-[12px] font-semibold text-[#414141] outline-none"
+                  />
+                  <input
+                    value={project.linkHref}
+                    onChange={(event) => updateToolProjectText(index, "linkHref", event.target.value)}
+                    placeholder="Meta Link Href"
+                    className="h-8 w-full border border-[#d8d8d8] bg-[#f8f8f8] px-2 text-[12px] font-semibold text-[#414141] outline-none"
+                  />
+                  <input
+                    value={project.demoUrl}
+                    onChange={(event) => updateToolProjectText(index, "demoUrl", event.target.value)}
+                    placeholder="Demo URL (/tools-images/... or Blob URL)"
+                    className="h-8 w-full border border-[#d8d8d8] bg-[#f8f8f8] px-2 text-[12px] font-semibold text-[#414141] outline-none md:col-span-2"
+                  />
+                  <textarea
+                    value={project.description}
+                    onChange={(event) => updateToolProjectText(index, "description", event.target.value)}
+                    placeholder="Description"
+                    rows={3}
+                    className="w-full border border-[#d8d8d8] bg-[#f8f8f8] px-2 py-1.5 text-[12px] font-semibold text-[#414141] outline-none md:col-span-2"
+                  />
+                  <textarea
+                    value={project.highlightUrls.join("\n")}
+                    onChange={(event) => {
+                      const urls = event.target.value
+                        .split("\n")
+                        .map((item) => item.trim())
+                        .filter(Boolean)
+                      updateToolProjectHighlights(index, urls)
+                    }}
+                    placeholder="Highlight URLs (one per line)"
+                    rows={3}
+                    className="w-full border border-[#d8d8d8] bg-[#f8f8f8] px-2 py-1.5 text-[12px] font-semibold text-[#414141] outline-none md:col-span-2"
+                  />
+                </div>
+              </article>
+            ))}
           </div>
         </section>
       </section>

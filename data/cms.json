@@ -124,6 +124,45 @@
       "/lab-images/nhd.png",
       "/lab-images/max_asian_woman_puuting_on_headphones_looking_up_on_a_white_b_627f66ed-9a3a-4eca-b2f4-8bb4091a1cf0_2.png",
       "/lab-images/frame-1707479490-1770897774468.png"
-    ]
-  }
+    ],
+    "tools": []
+  },
+  "toolsProjects": [
+    {
+      "id": "node-base-effect-tool",
+      "name": "A NODE BASE EFFECT TOOL",
+      "tagline": "NODE EDITOR",
+      "description": "I BUILT THIS BECAUSE I WANTED TO VISUALIZE HOW I CAN ADD DIFFERENT EFFECTS TO AN IMAGE BUT NOW ITS A NODE EDITOR",
+      "year": "2026",
+      "status": "ACTIVE",
+      "linkLabel": "SURFCE.WORK [↗]",
+      "linkHref": "https://surfce.work",
+      "demoUrl": "",
+      "highlightUrls": []
+    },
+    {
+      "id": "kinetic-type-engine",
+      "name": "KINETIC TYPE ENGINE",
+      "tagline": "MOTION TYPE",
+      "description": "A LIVE TYPE TOOL TO STAGE TIMING CURVES, WEIGHT SHIFTS, AND LAYERED GLYPH EFFECTS FOR EDITORIAL HEADLINES.",
+      "year": "2026",
+      "status": "IN PROGRESS",
+      "linkLabel": "TYPELAB.LOCAL [↗]",
+      "linkHref": "https://example.com",
+      "demoUrl": "",
+      "highlightUrls": []
+    },
+    {
+      "id": "palette-drift-mixer",
+      "name": "PALETTE DRIFT MIXER",
+      "tagline": "COLOR SYSTEM",
+      "description": "A SYSTEM TOOL TO BLEND BRAND PALETTES, PREVIEW CONTRAST, AND EXPORT APPROVED COLOR STATES FOR UI FLOWS.",
+      "year": "2026",
+      "status": "BETA",
+      "linkLabel": "PALETTE.DRIFT [↗]",
+      "linkHref": "https://example.com",
+      "demoUrl": "",
+      "highlightUrls": []
+    }
+  ]
 }

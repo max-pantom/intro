@@ -48,6 +48,9 @@
 }
 
 :root {
+  --font-sans: "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-serif: "Times New Roman", Georgia, serif;
+  --font-geist-mono: "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   --background: oklch(0 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);

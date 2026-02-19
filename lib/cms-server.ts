@@ -7,6 +7,7 @@ import { defaultCmsPublicData, type CmsPublicData } from "@/lib/cms-types"
 const CMS_DATA_DIR = path.join(process.cwd(), "data")
 const CMS_DATA_PATH = path.join(CMS_DATA_DIR, "cms.json")
 const folderColors = new Set(["silver", "graphite", "red", "blue", "yellow", "purple"])
+const galleryPrefixes = ["/apps-images/", "/website-images/", "/lab-images/", "/tools-images/"]
 
 function hasPostgresConfig() {
   return Boolean(process.env.POSTGRES_URL || process.env.DATABASE_URL)
@@ -31,6 +32,33 @@ function isAllowedGalleryPath(value: string, localPrefix: string) {
   }
 }
 
+function isAllowedToolMediaPath(value: string) {
+  if (galleryPrefixes.some((prefix) => value.startsWith(prefix))) return true
+
+  if (!value.startsWith("https://")) return false
+
+  try {
+    const parsed = new URL(value)
+    return parsed.hostname.endsWith(".public.blob.vercel-storage.com")
+  } catch {
+    return false
+  }
+}
+
+function readString(value: unknown, fallback = "") {
+  if (typeof value !== "string") return fallback
+  const trimmed = value.trim()
+  return trimmed || fallback
+}
+
+function buildProjectId(value: string, index: number) {
+  const normalized = value
+    .toLowerCase()
+    .replace(/[^a-z0-9-_]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+  return normalized || `tool-project-${index + 1}`
+}
+
 async function ensureCmsTable() {
   await sql`
     CREATE TABLE IF NOT EXISTS cms_state (
@@ -46,6 +74,7 @@ function sanitizeCmsData(input: unknown): CmsPublicData {
   const sourceNav = Array.isArray(source.navItems) ? source.navItems : []
   const sourceFolders = Array.isArray(source.homeFolderTiles) ? source.homeFolderTiles : []
   const sourceGalleries = source.galleries && typeof source.galleries === "object" ? source.galleries : null
+  const sourceToolsProjects = Array.isArray(source.toolsProjects) ? source.toolsProjects : []
 
   const navItems = defaultCmsPublicData.navItems.map((defaultItem) => {
     const candidate = sourceNav.find((item) => item && typeof item === "object" && "key" in item && item.key === defaultItem.key)
@@ -91,12 +120,46 @@ function sanitizeCmsData(input: unknown): CmsPublicData {
           (value): value is string => typeof value === "string" && isAllowedGalleryPath(value, "/lab-images/"),
         )
       : defaultCmsPublicData.galleries.labs,
+    tools: Array.isArray(sourceGalleries?.tools)
+      ? sourceGalleries.tools.filter(
+          (value): value is string => typeof value === "string" && isAllowedGalleryPath(value, "/tools-images/"),
+        )
+      : defaultCmsPublicData.galleries.tools,
   }
+
+  const toolsProjects = sourceToolsProjects
+    .filter((project): project is NonNullable<typeof project> => Boolean(project && typeof project === "object"))
+    .map((project, index) => {
+      const name = readString(project.name, `UNTITLED PROJECT ${index + 1}`)
+      const idSeed = readString(project.id, name)
+
+      return {
+        id: buildProjectId(idSeed, index),
+        name,
+        tagline: readString(project.tagline),
+        description: readString(project.description),
+        year: readString(project.year),
+        status: readString(project.status, "ACTIVE"),
+        linkLabel: readString(project.linkLabel),
+        linkHref: readString(project.linkHref),
+        demoUrl:
+          typeof project.demoUrl === "string" && isAllowedToolMediaPath(project.demoUrl)
+            ? project.demoUrl
+            : "",
+        highlightUrls: Array.isArray(project.highlightUrls)
+          ? project.highlightUrls.filter(
+              (value): value is string => typeof value === "string" && isAllowedToolMediaPath(value),
+            )
+          : [],
+      }
+    })
+    .slice(0, 60)
 
   return {
     navItems,
     homeFolderTiles,
     galleries,
+    toolsProjects: toolsProjects.length > 0 ? toolsProjects : defaultCmsPublicData.toolsProjects,
   }
 }
 
