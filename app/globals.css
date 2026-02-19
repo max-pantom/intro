@@ -126,6 +126,10 @@
     min-height: 100dvh;
     overflow: hidden;
   }
+
+  a[href] {
+    cursor: pointer;
+  }
 }
 
 .pantom-card {
@@ -199,6 +203,42 @@
   transition: transform 320ms ease;
 }
 
+@keyframes pantom-oval-logo-shimmer {
+  from {
+    transform: translateX(-150%) skewX(var(--pantom-shimmer-angle, -22deg));
+    opacity: 0;
+  }
+  18% {
+    opacity: var(--pantom-shimmer-opacity, 0.45);
+  }
+  to {
+    transform: translateX(220%) skewX(var(--pantom-shimmer-angle, -22deg));
+    opacity: 0;
+  }
+}
+
+.pantom-oval-logo-shimmer {
+  position: relative;
+  isolation: isolate;
+}
+
+.pantom-oval-logo-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: -15% -35%;
+  pointer-events: none;
+  background: linear-gradient(105deg, transparent 34%, rgb(255 255 255 / var(--pantom-shimmer-opacity, 0.6)) 50%, transparent 66%);
+  mix-blend-mode: screen;
+  transform: translateX(-150%) skewX(var(--pantom-shimmer-angle, -22deg));
+  opacity: 0;
+}
+
+.pantom-oval-logo-shimmer:hover::after,
+.pantom-oval-logo-shimmer:focus-visible::after,
+.pantom-oval-logo-shimmer:active::after {
+  animation: pantom-oval-logo-shimmer var(--pantom-shimmer-duration, 1.15s) linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .pantom-card {
     transition: none;
@@ -219,6 +259,11 @@
   .pantom-logo-flip {
     animation: none;
     transition: none;
+  }
+
+  .pantom-oval-logo-shimmer::after {
+    animation: none;
+    opacity: 0;
   }
 
 }
