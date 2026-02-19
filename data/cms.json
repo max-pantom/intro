@@ -124,6 +124,21 @@
       "/lab-images/nhd.png",
       "/lab-images/max_asian_woman_puuting_on_headphones_looking_up_on_a_white_b_627f66ed-9a3a-4eca-b2f4-8bb4091a1cf0_2.png",
       "/lab-images/frame-1707479490-1770897774468.png"
-    ]
-  }
+    ],
+    "tools": []
+  },
+  "toolsProjects": [
+    {
+      "id": "node-base-effect-tool",
+      "name": "A NODE BASE EFFECT TOOL",
+      "tagline": "NODE EDITOR",
+      "description": "I BUILT THIS BECAUSE I WANTED TO VISUALIZE HOW I CAN ADD DIFFERENT EFFECTS TO AN IMAGE BUT NOW ITS A NODE EDITOR",
+      "year": "2026",
+      "status": "ACTIVE",
+      "linkLabel": "SURFCE.WORK [↗]",
+      "linkHref": "https://surfce.work",
+      "demoUrl": "",
+      "highlightUrls": []
+    }
+  ]
 }

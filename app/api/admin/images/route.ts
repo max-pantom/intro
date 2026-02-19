@@ -14,6 +14,7 @@ const galleryConfig: Record<GalleryKey, { folder: string; publicPrefix: string }
   apps: { folder: path.join(process.cwd(), "public", "apps-images"), publicPrefix: "/apps-images/" },
   website: { folder: path.join(process.cwd(), "public", "website-images"), publicPrefix: "/website-images/" },
   labs: { folder: path.join(process.cwd(), "public", "lab-images"), publicPrefix: "/lab-images/" },
+  tools: { folder: path.join(process.cwd(), "public", "tools-images"), publicPrefix: "/tools-images/" },
 }
 
 async function isAuthorized() {
@@ -28,7 +29,7 @@ function hasBlobConfig() {
 function getGallery(request: Request): GalleryKey | null {
   const gallery = new URL(request.url).searchParams.get("gallery")
   if (!gallery) return null
-  if (gallery === "apps" || gallery === "website" || gallery === "labs") return gallery
+  if (gallery === "apps" || gallery === "website" || gallery === "labs" || gallery === "tools") return gallery
   return null
 }
 
@@ -82,7 +83,7 @@ export async function POST(request: Request) {
 
   const formData = await request.formData()
   const galleryValue = formData.get("gallery")
-  if (galleryValue !== "apps" && galleryValue !== "website" && galleryValue !== "labs") {
+  if (galleryValue !== "apps" && galleryValue !== "website" && galleryValue !== "labs" && galleryValue !== "tools") {
     return NextResponse.json({ error: "Missing or invalid gallery." }, { status: 400 })
   }
 
