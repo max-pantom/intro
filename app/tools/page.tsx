@@ -51,10 +51,49 @@ function hydrateToolsProjects(projects: CmsToolProject[], fallbackImages: string
   })
 }
 
+function ensureMinimumProjects(projects: CmsToolProject[]) {
+  const fakeProjects: CmsToolProject[] = [
+    {
+      id: "kinetic-type-engine",
+      name: "KINETIC TYPE ENGINE",
+      tagline: "MOTION TYPE",
+      description: "A LIVE TYPE TOOL TO STAGE TIMING CURVES, WEIGHT SHIFTS, AND LAYERED GLYPH EFFECTS FOR EDITORIAL HEADLINES.",
+      year: "2026",
+      status: "IN PROGRESS",
+      linkLabel: "TYPELAB.LOCAL [↗]",
+      linkHref: "https://example.com",
+      demoUrl: "",
+      highlightUrls: [],
+    },
+    {
+      id: "palette-drift-mixer",
+      name: "PALETTE DRIFT MIXER",
+      tagline: "COLOR SYSTEM",
+      description: "A SYSTEM TOOL TO BLEND BRAND PALETTES, PREVIEW CONTRAST, AND EXPORT APPROVED COLOR STATES FOR UI FLOWS.",
+      year: "2026",
+      status: "BETA",
+      linkLabel: "PALETTE.DRIFT [↗]",
+      linkHref: "https://example.com",
+      demoUrl: "",
+      highlightUrls: [],
+    },
+  ]
+
+  const next = [...projects]
+  for (const project of fakeProjects) {
+    if (next.length >= 3) break
+    if (!next.some((item) => item.id === project.id)) {
+      next.push(project)
+    }
+  }
+
+  return next
+}
+
 export default async function ToolsPage() {
   const cmsData = await getCmsPublicData()
   const toolsImages = cmsData.galleries.tools.length > 0 ? cmsData.galleries.tools : await getToolsImagePaths()
-  const toolsProjects = hydrateToolsProjects(cmsData.toolsProjects, toolsImages)
+  const toolsProjects = ensureMinimumProjects(hydrateToolsProjects(cmsData.toolsProjects, toolsImages))
 
   return (
     <StudioFrame navOverride="home" headerClassName="px-5 md:px-6">
