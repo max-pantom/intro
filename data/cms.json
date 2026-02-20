@@ -137,6 +137,8 @@
       "status": "ACTIVE",
       "linkLabel": "SURFCE.WORK [↗]",
       "linkHref": "https://surfce.work",
+      "githubHref": "https://github.com/max-pantom",
+      "instagramHref": "https://instagram.com/metagravity0",
       "demoUrl": "",
       "highlightUrls": []
     },
@@ -149,6 +151,8 @@
       "status": "IN PROGRESS",
       "linkLabel": "TYPELAB.LOCAL [↗]",
       "linkHref": "https://example.com",
+      "githubHref": "",
+      "instagramHref": "",
       "demoUrl": "",
       "highlightUrls": []
     },
@@ -161,6 +165,8 @@
       "status": "BETA",
       "linkLabel": "PALETTE.DRIFT [↗]",
       "linkHref": "https://example.com",
+      "githubHref": "",
+      "instagramHref": "",
       "demoUrl": "",
       "highlightUrls": []
     }

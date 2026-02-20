@@ -10,17 +10,24 @@ export const dynamic = "force-dynamic"
 
 const TOOLS_IMAGES_DIR = path.join(process.cwd(), "public", "tools-images")
 const IMAGE_FILE_PATTERN = /\.(png|jpe?g|webp|gif|avif|svg)$/i
+const DEFAULT_TOOLS_PREVIEWS = [
+  "/website-images/Index.png",
+  "/website-images/Marv.png",
+  "/lab-images/28.gif",
+]
 
 async function getToolsImagePaths() {
   try {
     const entries = await readdir(TOOLS_IMAGES_DIR, { withFileTypes: true })
-    return entries
+    const matched = entries
       .filter((entry) => entry.isFile() && IMAGE_FILE_PATTERN.test(entry.name))
       .map((entry) => entry.name)
       .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }))
       .map((name) => `/tools-images/${name}`)
+
+    return matched.length > 0 ? matched : [...DEFAULT_TOOLS_PREVIEWS]
   } catch {
-    return []
+    return [...DEFAULT_TOOLS_PREVIEWS]
   }
 }
 
@@ -35,13 +42,15 @@ function hydrateToolsProjects(projects: CmsToolProject[], fallbackImages: string
       status: "ACTIVE",
       linkLabel: "",
       linkHref: "",
+      githubHref: "",
+      instagramHref: "",
       demoUrl: imagePath,
       highlightUrls: [],
     }))
   }
 
   return projects.map((project, index) => {
-    const fallbackImage = fallbackImages[index] ?? fallbackImages[0] ?? ""
+    const fallbackImage = fallbackImages[index] ?? fallbackImages[0] ?? DEFAULT_TOOLS_PREVIEWS[index % DEFAULT_TOOLS_PREVIEWS.length] ?? ""
 
     return {
       ...project,
@@ -51,7 +60,7 @@ function hydrateToolsProjects(projects: CmsToolProject[], fallbackImages: string
   })
 }
 
-function ensureMinimumProjects(projects: CmsToolProject[]) {
+function ensureMinimumProjects(projects: CmsToolProject[], fallbackImages: string[]) {
   const fakeProjects: CmsToolProject[] = [
     {
       id: "kinetic-type-engine",
@@ -62,6 +71,8 @@ function ensureMinimumProjects(projects: CmsToolProject[]) {
       status: "IN PROGRESS",
       linkLabel: "TYPELAB.LOCAL [↗]",
       linkHref: "https://example.com",
+      githubHref: "",
+      instagramHref: "",
       demoUrl: "",
       highlightUrls: [],
     },
@@ -74,6 +85,8 @@ function ensureMinimumProjects(projects: CmsToolProject[]) {
       status: "BETA",
       linkLabel: "PALETTE.DRIFT [↗]",
       linkHref: "https://example.com",
+      githubHref: "",
+      instagramHref: "",
       demoUrl: "",
       highlightUrls: [],
     },
@@ -83,7 +96,12 @@ function ensureMinimumProjects(projects: CmsToolProject[]) {
   for (const project of fakeProjects) {
     if (next.length >= 3) break
     if (!next.some((item) => item.id === project.id)) {
-      next.push(project)
+      const fallbackImage = fallbackImages[next.length] ?? fallbackImages[0] ?? DEFAULT_TOOLS_PREVIEWS[next.length % DEFAULT_TOOLS_PREVIEWS.length]
+      next.push({
+        ...project,
+        demoUrl: fallbackImage,
+        highlightUrls: fallbackImage ? [fallbackImage] : [],
+      })
     }
   }
 
@@ -93,10 +111,10 @@ function ensureMinimumProjects(projects: CmsToolProject[]) {
 export default async function ToolsPage() {
   const cmsData = await getCmsPublicData()
   const toolsImages = cmsData.galleries.tools.length > 0 ? cmsData.galleries.tools : await getToolsImagePaths()
-  const toolsProjects = ensureMinimumProjects(hydrateToolsProjects(cmsData.toolsProjects, toolsImages))
+  const toolsProjects = ensureMinimumProjects(hydrateToolsProjects(cmsData.toolsProjects, toolsImages), toolsImages)
 
   return (
-    <StudioFrame navOverride="home" headerClassName="px-5 md:px-6">
+    <StudioFrame navOverride="home" headerClassName="px-5 md:px-6 [&>a]:opacity-0 [&>a]:pointer-events-none">
       <ToolsContent projects={toolsProjects} />
     </StudioFrame>
   )

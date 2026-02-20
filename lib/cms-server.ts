@@ -142,6 +142,8 @@ function sanitizeCmsData(input: unknown): CmsPublicData {
         status: readString(project.status, "ACTIVE"),
         linkLabel: readString(project.linkLabel),
         linkHref: readString(project.linkHref),
+        githubHref: readString(project.githubHref),
+        instagramHref: readString(project.instagramHref),
         demoUrl:
           typeof project.demoUrl === "string" && isAllowedToolMediaPath(project.demoUrl)
             ? project.demoUrl

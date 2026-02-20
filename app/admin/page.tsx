@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState, type MouseEvent } from "react"
+import { useCallback, useEffect, useMemo, useState, type MouseEvent } from "react"
 import Image from "next/image"
 import Link from "next/link"
 
@@ -49,6 +49,8 @@ function buildEmptyToolProject(index: number): CmsToolProject {
     status: "ACTIVE",
     linkLabel: "",
     linkHref: "",
+    githubHref: "",
+    instagramHref: "",
     demoUrl: "",
     highlightUrls: [],
   }
@@ -62,11 +64,13 @@ export default function AdminPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [activeGallery, setActiveGallery] = useState<GalleryKey>("apps")
   const [galleryFiles, setGalleryFiles] = useState<string[]>([])
+  const [toolsProjectFiles, setToolsProjectFiles] = useState<string[]>([])
   const [hoveredPreviewPath, setHoveredPreviewPath] = useState<string | null>(null)
   const [previewPosition, setPreviewPosition] = useState({ x: 0, y: 0 })
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [checkedRows, setCheckedRows] = useState<string[]>([])
+  const [toolProjectPicker, setToolProjectPicker] = useState<Record<number, string>>({})
 
   const statusColor = useMemo(() => {
     if (status.tone === "error") return "text-[#a9182d]"
@@ -137,16 +141,20 @@ export default function AdminPage() {
     setIsLoading(false)
   }
 
-  const loadGalleryFiles = async (gallery: GalleryKey) => {
+  const fetchGalleryFiles = useCallback(async (gallery: GalleryKey) => {
     const response = await fetch(`/api/admin/images?gallery=${gallery}`, { cache: "no-store" })
     if (!response.ok) {
-      setGalleryFiles([])
-      return
+      return []
     }
 
     const payload = (await response.json()) as { files?: string[] }
-    setGalleryFiles(Array.isArray(payload.files) ? payload.files : [])
-  }
+    return Array.isArray(payload.files) ? payload.files : []
+  }, [])
+
+  const loadGalleryFiles = useCallback(async (gallery: GalleryKey) => {
+    const files = await fetchGalleryFiles(gallery)
+    setGalleryFiles(files)
+  }, [fetchGalleryFiles])
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -162,11 +170,16 @@ export default function AdminPage() {
   useEffect(() => {
     if (!isAuthenticated) return
     const timeoutId = window.setTimeout(() => {
-      loadGalleryFiles(activeGallery).catch(() => setGalleryFiles([]))
+      Promise.all([loadGalleryFiles(activeGallery), fetchGalleryFiles("tools")])
+        .then(([, files]) => setToolsProjectFiles(files))
+        .catch(() => {
+          setGalleryFiles([])
+          setToolsProjectFiles([])
+        })
     }, 0)
 
     return () => window.clearTimeout(timeoutId)
-  }, [activeGallery, isAuthenticated])
+  }, [activeGallery, fetchGalleryFiles, isAuthenticated, loadGalleryFiles])
 
   const login = async () => {
     setStatus({ tone: "idle", message: "" })
@@ -276,6 +289,49 @@ export default function AdminPage() {
       await loadGalleryFiles(activeGallery)
       setStatus({ tone: "success", message: "Image uploaded. Click save to publish." })
     }
+  }
+
+  const uploadToolProjectImage = async (index: number, file: File) => {
+    const formData = new FormData()
+    formData.set("gallery", "tools")
+    formData.set("file", file)
+
+    const response = await fetch("/api/admin/images", {
+      method: "POST",
+      body: formData,
+    })
+
+    if (!response.ok) {
+      setStatus({ tone: "error", message: "Project image upload failed." })
+      return
+    }
+
+    const payload = (await response.json()) as { path?: string }
+    if (!payload.path) return
+
+    updateToolProjectText(index, "demoUrl", payload.path)
+    updateToolProjectHighlights(index, Array.from(new Set([...(cmsData.toolsProjects[index]?.highlightUrls ?? []), payload.path])))
+
+    const files = await fetchGalleryFiles("tools")
+    setToolsProjectFiles(files)
+    if (activeGallery === "tools") {
+      setGalleryFiles(files)
+      addGalleryImage(payload.path)
+    }
+
+    setStatus({ tone: "success", message: "Project image uploaded. Click save to publish." })
+  }
+
+  const applyToolProjectImage = (index: number, path: string, mode: "demo" | "highlight") => {
+    if (!path) return
+
+    if (mode === "demo") {
+      updateToolProjectText(index, "demoUrl", path)
+      return
+    }
+
+    const current = cmsData.toolsProjects[index]?.highlightUrls ?? []
+    updateToolProjectHighlights(index, Array.from(new Set([...current, path])))
   }
 
   const autoFillGallery = () => {
@@ -746,11 +802,68 @@ export default function AdminPage() {
                     className="h-8 w-full border border-[#d8d8d8] bg-[#f8f8f8] px-2 text-[12px] font-semibold text-[#414141] outline-none"
                   />
                   <input
+                    value={project.githubHref}
+                    onChange={(event) => updateToolProjectText(index, "githubHref", event.target.value)}
+                    placeholder="GitHub Link (optional)"
+                    className="h-8 w-full border border-[#d8d8d8] bg-[#f8f8f8] px-2 text-[12px] font-semibold text-[#414141] outline-none"
+                  />
+                  <input
+                    value={project.instagramHref}
+                    onChange={(event) => updateToolProjectText(index, "instagramHref", event.target.value)}
+                    placeholder="Instagram Link (optional)"
+                    className="h-8 w-full border border-[#d8d8d8] bg-[#f8f8f8] px-2 text-[12px] font-semibold text-[#414141] outline-none"
+                  />
+                  <input
                     value={project.demoUrl}
                     onChange={(event) => updateToolProjectText(index, "demoUrl", event.target.value)}
                     placeholder="Demo URL (/tools-images/... or Blob URL)"
                     className="h-8 w-full border border-[#d8d8d8] bg-[#f8f8f8] px-2 text-[12px] font-semibold text-[#414141] outline-none md:col-span-2"
                   />
+                  <div className="flex flex-wrap items-center gap-2 border border-[#d8d8d8] bg-[#f8f8f8] p-2 md:col-span-2">
+                    <select
+                      value={toolProjectPicker[index] ?? project.demoUrl ?? toolsProjectFiles[0] ?? ""}
+                      onChange={(event) => setToolProjectPicker((current) => ({ ...current, [index]: event.target.value }))}
+                      className="h-8 min-w-[240px] flex-1 border border-[#d2d2d2] bg-white px-2 text-[11px] font-semibold uppercase tracking-[0.04em] text-[#565656] outline-none"
+                    >
+                      <option value="">Select tools image...</option>
+                      {toolsProjectFiles.map((path) => (
+                        <option key={`${project.id}-${path}`} value={path}>
+                          {path}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => applyToolProjectImage(index, toolProjectPicker[index] ?? project.demoUrl, "demo")}
+                      className="h-8 border border-[#c9c9c9] bg-[#f7f7f7] px-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#636363]"
+                    >
+                      Set Demo
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => applyToolProjectImage(index, toolProjectPicker[index] ?? project.demoUrl, "highlight")}
+                      className="h-8 border border-[#c9c9c9] bg-[#f7f7f7] px-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#636363]"
+                    >
+                      Add Highlight
+                    </button>
+                    <label className="inline-flex h-8 cursor-pointer items-center border border-[#c9c9c9] bg-[#f7f7f7] px-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#636363]">
+                      Upload
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(event) => {
+                          const file = event.target.files?.[0]
+                          if (file) {
+                            uploadToolProjectImage(index, file).catch(() =>
+                              setStatus({ tone: "error", message: "Project image upload failed." }),
+                            )
+                          }
+                          event.currentTarget.value = ""
+                        }}
+                      />
+                    </label>
+                  </div>
                   <textarea
                     value={project.description}
                     onChange={(event) => updateToolProjectText(index, "description", event.target.value)}

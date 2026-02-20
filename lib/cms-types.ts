@@ -18,6 +18,8 @@ export type CmsToolProject = {
   status: string
   linkLabel: string
   linkHref: string
+  githubHref: string
+  instagramHref: string
   demoUrl: string
   highlightUrls: string[]
 }
@@ -48,6 +50,8 @@ export const defaultCmsPublicData: CmsPublicData = {
       status: "ACTIVE",
       linkLabel: "SURFCE.WORK [↗]",
       linkHref: "https://surfce.work",
+      githubHref: "https://github.com/max-pantom",
+      instagramHref: "https://instagram.com/metagravity0",
       demoUrl: "",
       highlightUrls: [],
     },
@@ -60,6 +64,8 @@ export const defaultCmsPublicData: CmsPublicData = {
       status: "IN PROGRESS",
       linkLabel: "TYPELAB.LOCAL [↗]",
       linkHref: "https://example.com",
+      githubHref: "",
+      instagramHref: "",
       demoUrl: "",
       highlightUrls: [],
     },
@@ -72,6 +78,8 @@ export const defaultCmsPublicData: CmsPublicData = {
       status: "BETA",
       linkLabel: "PALETTE.DRIFT [↗]",
       linkHref: "https://example.com",
+      githubHref: "",
+      instagramHref: "",
       demoUrl: "",
       highlightUrls: [],
     },
