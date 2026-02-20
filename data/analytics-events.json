@@ -3550,5 +3550,37 @@
       "device": "desktop",
       "metricName": ""
     }
+  },
+  {
+    "occurredAt": "2026-02-20T17:25:31.877Z",
+    "eventName": "page_dwell",
+    "sessionId": "60928311-bc2e-4324-9553-05651247e6f1",
+    "path": "/tools",
+    "source": "other",
+    "sourceContext": "engagement",
+    "label": "",
+    "href": "",
+    "section": "",
+    "itemId": "",
+    "itemType": "",
+    "value": 0,
+    "durationMs": 833583,
+    "isBot": false,
+    "meta": {
+      "referrer": "http://localhost:3000/tools",
+      "referrerHost": "localhost",
+      "utmSource": "",
+      "utmMedium": "",
+      "utmCampaign": "",
+      "locale": "en-US",
+      "timezone": "Africa/Lagos",
+      "country": "",
+      "city": "",
+      "siteHost": "localhost:3000",
+      "siteOrigin": "http://localhost:3000",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36",
+      "device": "desktop",
+      "metricName": ""
+    }
   }
 ]
