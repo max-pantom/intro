@@ -8,13 +8,14 @@ type RandomizedLabelProps = {
   text: string
   className?: string
   triggerKey?: number
+  intervalMs?: number
 }
 
 function randomGlyph() {
   return GLYPHS[Math.floor(Math.random() * GLYPHS.length)] ?? "#"
 }
 
-export function RandomizedLabel({ text, className, triggerKey = 0 }: RandomizedLabelProps) {
+export function RandomizedLabel({ text, className, triggerKey = 0, intervalMs = 24 }: RandomizedLabelProps) {
   const [displayText, setDisplayText] = useState(text)
   const intervalRef = useRef<number | null>(null)
   const reducedMotionRef = useRef(false)
@@ -57,8 +58,8 @@ export function RandomizedLabel({ text, className, triggerKey = 0 }: RandomizedL
         stopAnimation()
         setDisplayText(text)
       }
-    }, 24)
-  }, [stopAnimation, text])
+    }, intervalMs)
+  }, [intervalMs, stopAnimation, text])
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)")
