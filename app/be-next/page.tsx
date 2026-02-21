@@ -161,7 +161,7 @@ export default function BeNextPage() {
       navClassName="bg-[#ececec]/84 md:bg-transparent"
     >
       <main className="relative h-full overflow-hidden px-4 pb-5 pt-6 md:px-6">
-        <section className="absolute left-4 top-5 z-10 space-y-1.5 font-mono text-[12px] leading-none uppercase tracking-[0.02em] text-black/46 md:left-6 md:top-6 md:space-y-2 md:text-[16px]">
+        <section className="absolute left-4 top-5 z-10 space-y-1.5 font-mono text-[10px] leading-none uppercase tracking-[0.02em] text-black/46 md:left-6 md:top-6 md:space-y-2 md:text-[16px]">
           <p>CURRENTLY ACCEPTING</p>
           <p className="pantom-badge-pulse-black inline-block bg-[#c7c7c7] px-[4px] py-[2px] text-[10px] text-[#676767] md:text-[16px]">2 NEW PROJECTS.</p>
         </section>

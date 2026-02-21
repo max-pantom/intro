@@ -1,7 +1,6 @@
 "use client"
 
 import Link from "next/link"
-import { useDialKit } from "dialkit"
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent, type TouchEvent, type WheelEvent } from "react"
 
 import { RandomizedLabel } from "@/components/studio/randomized-label"
@@ -16,6 +15,99 @@ type ToolsMode = "archive" | "journey"
 
 const PROJECT_TRANSITION_MS = 420
 const PROJECT_TRANSITION_EASE = "cubic-bezier(0.22,1,0.36,1)"
+
+const DEFAULT_ARCHIVE_DIAL = {
+  layout: {
+    maxWidth: 2109,
+    cardWidth: 760,
+    gridGapX: 127,
+    gridGapY: 127,
+    thumbPadding: 0,
+  },
+  interaction: {
+    inactiveOpacity: 0.56,
+    inactiveSaturation: 0.5,
+    hoverScale: 1,
+    hoverContrast: 1.03,
+    activeInnerBlur: 0,
+    activeFrostOpacity: 0,
+    activeFrostSaturation: 1,
+  },
+  link: {
+    top: 5,
+    left: 0,
+    fontSize: 12,
+  },
+  transition: {
+    durationMs: 632,
+    yShift: 15,
+    damping: 38,
+    mass: 1.72,
+    stiffness: 128,
+  },
+}
+
+const DEFAULT_TIMELINE_DIAL = {
+  rail: {
+    height: 21,
+    markerWidth: 34,
+    markerHeight: 54,
+    previewWidth: 49,
+    previewHeight: 32,
+    scrubSensitivity: 200,
+  },
+  location: {
+    railOffsetX: 0,
+    railOffsetY: 0,
+    thumbnailOffsetX: 24,
+    thumbnailOffsetY: -6,
+    yearOffsetX: 9,
+    yearOffsetY: 0,
+  },
+  transition: {
+    markerShiftY: 11,
+  },
+}
+
+const DEFAULT_STAGE_DIAL = {
+  hero: {
+    width: 1125,
+    height: 572,
+  },
+  neighbors: {
+    width: 422,
+    height: 278,
+    opacity: 0.76,
+  },
+  previous: {
+    offsetX: 210,
+    top: -233,
+    rotate: 0,
+  },
+  next: {
+    offsetX: 210,
+    bottom: -199,
+    rotate: 0,
+  },
+  layout: {
+    sideWidth: 120,
+    timelineMaxWidth: 768,
+  },
+  link: {
+    top: 0,
+    right: 14,
+    fontSize: 11,
+  },
+}
+
+const DEFAULT_MODE_DIAL = {
+  transition: {
+    modeSwitchMs: 1028,
+    wheelThreshold: 91,
+    wheelCooldown: 127,
+    swipeThreshold: 138,
+  },
+}
 
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value))
@@ -44,6 +136,20 @@ function normalizeHref(value: string) {
   if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("mailto:")) return trimmed
   if (trimmed.startsWith("/")) return trimmed
   return `https://${trimmed}`
+}
+
+function linkRows(project: CmsToolProject) {
+  const rows: Array<{ label: string; href: string }> = []
+  if (project.linkLabel && project.linkHref) {
+    rows.push({ label: normalizeUpperLabel(project.linkLabel), href: normalizeHref(project.linkHref) })
+  }
+  if (project.githubHref) {
+    rows.push({ label: "GITHUB [↗]", href: normalizeHref(project.githubHref) })
+  }
+  if (project.instagramHref) {
+    rows.push({ label: "INSTAGRAM [↗]", href: normalizeHref(project.instagramHref) })
+  }
+  return rows
 }
 
 function resolveSurfaceUrl(project: CmsToolProject, highlightIndex = 0) {
@@ -246,36 +352,7 @@ function BlockView({
   activeIndex: number
   onSelect: (index: number) => void
 }) {
-  const archiveDial = useDialKit("Tools / Archive Controls", {
-    layout: {
-      maxWidth: [2109, 1200, 2600],
-      cardWidth: [760, 260, 900],
-      gridGapX: [127, 20, 220],
-      gridGapY: [127, 20, 220],
-      thumbPadding: [0, 0, 60],
-    },
-    interaction: {
-      inactiveOpacity: [0.56, 0.3, 0.95],
-      inactiveSaturation: [0.5, 0.2, 1],
-      hoverScale: [1, 0.9, 1.08],
-      hoverContrast: [1.03, 1, 1.8],
-      activeInnerBlur: [0, 0, 28],
-      activeFrostOpacity: [0, 0, 0.5],
-      activeFrostSaturation: [1, 1, 2],
-    },
-    link: {
-      top: [5, 0, 42],
-      left: [0, 0, 42],
-      fontSize: [12, 8, 18],
-    },
-    transition: {
-      durationMs: [632, 120, 1800],
-      yShift: [15, -30, 30],
-      damping: [38, 4, 80],
-      mass: [1.72, 0.2, 6],
-      stiffness: [128, 20, 700],
-    },
-  })
+  const archiveDial = DEFAULT_ARCHIVE_DIAL
   const [hoveredSlot, setHoveredSlot] = useState<number | null>(null)
   const [titleRevealTicks, setTitleRevealTicks] = useState<Record<number, number>>({})
   const transitionMs = Math.max(120, archiveDial.transition.durationMs + archiveDial.transition.mass * 36 - archiveDial.transition.stiffness * 0.12)
@@ -393,19 +470,7 @@ function TimelineRail({
   activeIndex: number
   onSelect: (index: number) => void
 }) {
-  const timelineDial = useDialKit("Tools / Journey Controls", {
-    rail: {
-      height: [21, 8, 42],
-      markerWidth: [34, 8, 40],
-      markerHeight: [54, 12, 70],
-      previewWidth: [49, 32, 96],
-      previewHeight: [32, 20, 64],
-      scrubSensitivity: [200, 40, 400],
-    },
-    transition: {
-      markerShiftY: [11, 1, 28],
-    },
-  })
+  const timelineDial = DEFAULT_TIMELINE_DIAL
 
   const railRef = useRef<HTMLDivElement | null>(null)
   const isDraggingRef = useRef(false)
@@ -468,7 +533,14 @@ function TimelineRail({
           if (point) openByPointer(point.clientX)
         }}
       >
-        <div className="absolute inset-x-0 bottom-0" style={{ height: `${timelineDial.rail.height}px` }}>
+        <div
+          className="absolute inset-x-0"
+          style={{
+            height: `${timelineDial.rail.height}px`,
+            bottom: `${timelineDial.location.railOffsetY}px`,
+            transform: `translateX(${timelineDial.location.railOffsetX}px)`,
+          }}
+        >
           {Array.from({ length: tickCount }, (_, index) => {
             const distance = Math.abs(index - activeTick)
             const majorHeight = timelineDial.rail.height
@@ -519,6 +591,7 @@ function TimelineRail({
                 left: `${ratio * 100}%`,
                 height: `${timelineDial.rail.markerHeight}px`,
                 width: `${timelineDial.rail.markerWidth}px`,
+                transform: `translate(-50%, ${timelineDial.location.railOffsetY}px)`,
               }}
               aria-label={`Open ${project.name}`}
             >
@@ -531,10 +604,10 @@ function TimelineRail({
           className="pointer-events-none absolute -translate-x-1/2 overflow-hidden border border-black/10 bg-[#d9d9d9] transition-[left,transform] duration-300"
           style={{
             left: `${markerRatio * 100}%`,
-            bottom: `${timelineDial.rail.height + 1}px`,
+            bottom: `${timelineDial.rail.height + 1 + timelineDial.location.railOffsetY + timelineDial.location.thumbnailOffsetY}px`,
             height: `${timelineDial.rail.previewHeight}px`,
             width: `${timelineDial.rail.previewWidth}px`,
-            transform: `translateX(-50%) translateY(-${timelineDial.transition.markerShiftY}px)`,
+            transform: `translateX(calc(-50% + ${timelineDial.location.thumbnailOffsetX}px)) translateY(-${timelineDial.transition.markerShiftY}px)`,
           }}
         >
           <SurfaceFrame
@@ -548,7 +621,11 @@ function TimelineRail({
 
         <p
           className="pointer-events-none absolute -translate-x-1/2 font-mono text-[8px] uppercase tracking-[-0.02em] text-black/40 transition-[left] duration-300"
-          style={{ left: `${markerRatio * 100}%`, bottom: `${timelineDial.rail.height + timelineDial.rail.previewHeight + 9}px` }}
+          style={{
+            left: `${markerRatio * 100}%`,
+            bottom: `${timelineDial.rail.height + timelineDial.rail.previewHeight + 9 + timelineDial.location.railOffsetY + timelineDial.location.yearOffsetY}px`,
+            transform: `translateX(calc(-50% + ${timelineDial.location.yearOffsetX}px))`,
+          }}
         >
           {projects[activeIndex]?.year || "2026"}
         </p>
@@ -593,43 +670,15 @@ function TimelineView({
   activeIndex: number
   onSelect: (index: number) => void
 }) {
-  const stageDial = useDialKit("Tools / Journey Stage Controls", {
-    hero: {
-      width: [1125, 380, 1400],
-      height: [572, 240, 900],
-    },
-    neighbors: {
-      width: [422, 220, 1000],
-      height: [278, 120, 700],
-      opacity: [0.76, 0, 1],
-    },
-    previous: {
-      offsetX: [210, -420, 420],
-      top: [-233, -360, 420],
-      rotate: [0, -45, 45],
-    },
-    next: {
-      offsetX: [210, -420, 420],
-      bottom: [-199, -260, 420],
-      rotate: [0, -45, 45],
-    },
-    layout: {
-      sideWidth: [120, 80, 440],
-      timelineMaxWidth: [768, 420, 1800],
-    },
-    link: {
-      top: [0, 0, 46],
-      right: [14, 0, 46],
-      fontSize: [11, 8, 18],
-    },
-  })
+  const stageDial = DEFAULT_STAGE_DIAL
 
   const label = normalizeUpperLabel(activeProject.linkLabel || activeProject.name || "TOOL")
   const description = (activeProject.description || "ADD A DESCRIPTION IN CMS TO DESCRIBE THIS TOOL.").toUpperCase()
+  const activeLinks = linkRows(activeProject)
   const sideColumnWidth = Math.max(120, stageDial.layout.sideWidth)
 
   return (
-    <section className="relative mx-auto h-full w-full max-w-[1232px] pt-[116px] md:pt-[136px]" onWheel={onNavigateByWheel} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+    <section className="relative mx-auto h-full w-full pt-[116px] md:pt-[136px]" onWheel={onNavigateByWheel} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
       <div
         className="pointer-events-none absolute left-1/2 hidden -translate-x-1/2 md:block"
         style={{
@@ -658,14 +707,11 @@ function TimelineView({
         <SurfaceFrame project={nextNeighbor} highlightIndex={0} className="aspect-auto h-full w-full" imageClassName="object-cover" />
       </div>
 
-      <div
-        className="mx-auto mt-[20px] grid w-full max-w-[1232px] grid-cols-1 gap-5 md:mt-[54px] md:gap-6"
-        style={{ gridTemplateColumns: `minmax(0, 1fr)` }}
-      >
+      <div className="mx-auto mt-[20px] grid w-full grid-cols-1 gap-5 md:mt-[54px] md:gap-6" style={{ gridTemplateColumns: "minmax(0, 1fr)" }}>
         <div
           className="hidden items-start md:grid"
           style={{
-            gridTemplateColumns: `minmax(${sideColumnWidth}px,1fr) minmax(0, ${stageDial.hero.width}px) minmax(${sideColumnWidth}px,1fr)`,
+            gridTemplateColumns: `minmax(${sideColumnWidth}px,1fr) ${stageDial.hero.width}px minmax(${sideColumnWidth}px,1fr)`,
             columnGap: "24px",
           }}
         >
@@ -691,18 +737,27 @@ function TimelineView({
             </div>
           </div>
 
-          <div className="relative flex h-full flex-col justify-between">
-            <div className="self-end" style={{ marginTop: `${stageDial.link.top}px`, marginRight: `${stageDial.link.right}px` }}>
-              <ImageCornerLink
-                project={activeProject}
-          align="right"
-          top={0}
-          side={0}
-          fontSize={stageDial.link.fontSize}
-                overlay={false}
-              />
+          <div className="relative flex h-full w-full flex-col justify-between overflow-visible">
+            <div className="self-start" style={{ marginTop: `${stageDial.link.top}px`, marginLeft: `${stageDial.link.right}px` }}>
+              <div className="space-y-1 text-left">
+                {activeLinks.map((row) => {
+                  const external = row.href.startsWith("http") || row.href.startsWith("mailto:")
+                  return (
+                    <a
+                      key={row.label}
+                      href={row.href}
+                      target={external ? "_blank" : undefined}
+                      rel={external ? "noreferrer" : undefined}
+                      className="block font-mono font-medium uppercase tracking-[-0.02em] text-black/74 transition-colors hover:text-black"
+                      style={{ fontSize: `${stageDial.link.fontSize}px` }}
+                    >
+                      {row.label}
+                    </a>
+                  )
+                })}
+              </div>
             </div>
-            <p className="max-w-full self-end text-right font-mono text-[12px] font-medium uppercase leading-[1.35] tracking-[-0.01em] text-black/80">
+            <p className="self-start text-left font-mono text-[12px] font-medium uppercase leading-[1.35] tracking-[-0.01em] text-black/80" style={{ width: "min(320px, 100%)" }}>
               {description}
             </p>
           </div>
@@ -729,15 +784,24 @@ function TimelineView({
         </div>
       </div>
 
-      <div className="mx-auto mt-3 flex w-full max-w-[720px] justify-end md:hidden" style={{ paddingRight: `${Math.max(6, stageDial.link.right * 0.8)}px` }}>
-        <ImageCornerLink
-          project={activeProject}
-          align="right"
-          top={0}
-          side={0}
-          fontSize={Math.max(10, stageDial.link.fontSize)}
-          overlay={false}
-        />
+      <div className="mx-auto mt-3 w-full max-w-[720px] md:hidden" style={{ paddingLeft: `${Math.max(6, stageDial.link.right * 0.8)}px` }}>
+        <div className="space-y-1 text-left">
+          {activeLinks.map((row) => {
+            const external = row.href.startsWith("http") || row.href.startsWith("mailto:")
+            return (
+              <a
+                key={`mobile-${row.label}`}
+                href={row.href}
+                target={external ? "_blank" : undefined}
+                rel={external ? "noreferrer" : undefined}
+                className="block font-mono font-medium uppercase tracking-[-0.02em] text-black/74 transition-colors hover:text-black"
+                style={{ fontSize: `${Math.max(10, stageDial.link.fontSize)}px` }}
+              >
+                {row.label}
+              </a>
+            )
+          })}
+        </div>
       </div>
 
       <p className="mx-auto mt-5 max-w-[720px] font-mono text-[12px] font-medium uppercase tracking-[-0.02em] text-black/80 md:hidden">{description}</p>
@@ -750,14 +814,7 @@ function TimelineView({
 }
 
 export function ToolsContent({ projects }: ToolsContentProps) {
-  const modeDial = useDialKit("Tools / Mode Controls", {
-    transition: {
-      modeSwitchMs: [784, 160, 1400],
-      wheelThreshold: [72, 2, 180],
-      wheelCooldown: [127, 40, 900],
-      swipeThreshold: [98, 16, 220],
-    },
-  })
+  const modeDial = DEFAULT_MODE_DIAL
 
   const safeProjects = useMemo(() => projects.filter((project) => Boolean(project.id && project.name)), [projects])
   const [mode, setMode] = useState<ToolsMode>("journey")
