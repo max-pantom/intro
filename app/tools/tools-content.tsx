@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent, type TouchEvent, type WheelEvent } from "react"
 
 import { RandomizedLabel } from "@/components/studio/randomized-label"
@@ -9,6 +10,7 @@ import { type CmsToolProject } from "@/lib/cms-types"
 
 type ToolsContentProps = {
   projects: CmsToolProject[]
+  mode: ToolsMode
 }
 
 type ToolsMode = "archive" | "journey"
@@ -102,7 +104,6 @@ const DEFAULT_STAGE_DIAL = {
 
 const DEFAULT_MODE_DIAL = {
   transition: {
-    modeSwitchMs: 1028,
     wheelThreshold: 91,
     wheelCooldown: 127,
     swipeThreshold: 138,
@@ -141,7 +142,7 @@ function normalizeHref(value: string) {
 function linkRows(project: CmsToolProject) {
   const rows: Array<{ label: string; href: string }> = []
   if (project.linkLabel && project.linkHref) {
-    rows.push({ label: normalizeUpperLabel(project.linkLabel), href: normalizeHref(project.linkHref) })
+    rows.push({ label: `${normalizeUpperLabel(project.linkLabel)} [↗]`, href: normalizeHref(project.linkHref) })
   }
   if (project.githubHref) {
     rows.push({ label: "GITHUB [↗]", href: normalizeHref(project.githubHref) })
@@ -224,7 +225,7 @@ function SurfaceFrame({
       ) : null}
 
       {!surfaceUrl ? <CheckerPattern /> : null}
-      {overlayClassName ? <div className={`absolute inset-0 ${overlayClassName}`} style={overlayStyle} /> : null}
+      {overlayClassName ? <div className={`pointer-events-none absolute inset-0 ${overlayClassName}`} style={overlayStyle} /> : null}
     </div>
   )
 }
@@ -244,11 +245,22 @@ function ImageCornerLink({
   fontSize: number
   overlay?: boolean
 }) {
-  const label = normalizeUpperLabel(project.linkLabel || project.name || "OPEN")
-  const href = normalizeHref(project.linkHref)
+  const fallbackHref = project.linkHref || project.githubHref || project.instagramHref || ""
+  const href = normalizeHref(fallbackHref)
+  const hasHref = Boolean(href)
+  const sourceLabel = project.linkHref
+    ? project.linkLabel || project.name || "OPEN"
+    : project.githubHref
+      ? "GITHUB"
+      : project.instagramHref
+        ? "INSTAGRAM"
+        : "ARCHIVED"
+  const label = hasHref ? `${normalizeUpperLabel(sourceLabel)} [↗]` : "ARCHIVED"
   const isExternal = href.startsWith("http") || href.startsWith("mailto:")
 
-  const className = `${overlay ? "absolute z-20" : "relative"} font-mono font-medium uppercase tracking-[-0.02em] text-black/74 mix-blend-multiply transition-colors hover:text-black`
+  const className = `${overlay ? "absolute z-20" : "relative"} font-mono font-medium uppercase tracking-[-0.02em] mix-blend-multiply ${
+    hasHref ? "text-black/74 transition-colors hover:text-black" : "text-black/32"
+  }`
 
   if (href) {
     return isExternal ? (
@@ -315,15 +327,17 @@ function TopModeToggle({
 }) {
   const buttonClassName =
     "inline-flex items-center gap-1.5 font-mono text-[12px] font-medium uppercase tracking-[-0.02em] transition-opacity hover:opacity-80"
+  const activeOpacity = "opacity-80"
+  const inactiveOpacity = "opacity-40"
 
   return (
-    <div className="absolute bottom-5 left-1/2 z-30 -translate-x-1/2 md:bottom-7">
+    <div className="absolute bottom-5 left-1/2 z-30 -translate-x-1/2 md:bottom-auto md:top-7">
       <div className="flex items-center gap-[31px]">
-        <button type="button" onClick={() => onChange("archive")} className={`${buttonClassName} ${mode === "archive" ? "opacity-80" : "opacity-20"}`}>
+        <button type="button" onClick={() => onChange("archive")} className={`${buttonClassName} ${mode === "archive" ? activeOpacity : inactiveOpacity}`}>
           <BlockIcon />
           <span>ARCHIVE</span>
         </button>
-        <button type="button" onClick={() => onChange("journey")} className={`${buttonClassName} ${mode === "journey" ? "opacity-80" : "opacity-20"}`}>
+        <button type="button" onClick={() => onChange("journey")} className={`${buttonClassName} ${mode === "journey" ? activeOpacity : inactiveOpacity}`}>
           <TimelineIcon />
           <span>JOURNEY</span>
         </button>
@@ -361,12 +375,8 @@ function BlockView({
   const transitionEase = `cubic-bezier(${easeIn},${easeOut},0.28,1)`
 
   const slots = useMemo(
-    () =>
-      Array.from({ length: 6 }, (_, index) => ({
-        slotIndex: index,
-        projectIndex: projects.length > 0 ? index % projects.length : 0,
-      })),
-    [projects.length],
+    () => projects.map((_, index) => ({ slotIndex: index, projectIndex: index })),
+    [projects],
   )
 
   return (
@@ -432,15 +442,7 @@ function BlockView({
                   className="aspect-[391/263] transition-[filter,opacity,transform]"
                   imageClassName="object-cover object-center transition-[transform,filter] duration-300 group-hover:scale-[1.02]"
                   style={{ filter: `contrast(${isHovered ? archiveDial.interaction.hoverContrast : 1})` }}
-                  overlayClassName={isActive ? "transition-colors duration-300" : "bg-black/10 transition-colors duration-300 group-hover:bg-black/0"}
-                  overlayStyle={
-                    !isActive
-                      ? {
-                          backdropFilter: `blur(${archiveDial.interaction.activeInnerBlur}px) saturate(${archiveDial.interaction.activeFrostSaturation})`,
-                          background: `linear-gradient(180deg, rgba(255,255,255,${archiveDial.interaction.activeFrostOpacity * 0.45}) 0%, rgba(255,255,255,${archiveDial.interaction.activeFrostOpacity}) 100%)`,
-                        }
-                      : undefined
-                  }
+                  overlayClassName={isActive ? "transition-colors duration-300" : "transition-colors duration-300"}
                 />
               </div>
               <div
@@ -672,8 +674,8 @@ function TimelineView({
 }) {
   const stageDial = DEFAULT_STAGE_DIAL
 
-  const label = normalizeUpperLabel(activeProject.linkLabel || activeProject.name || "TOOL")
-  const description = (activeProject.description || "ADD A DESCRIPTION IN CMS TO DESCRIBE THIS TOOL.").toUpperCase()
+  const label = normalizeUpperLabel(activeProject.name || "TOOL")
+  const description = activeProject.description ? activeProject.description.toUpperCase() : ""
   const activeLinks = linkRows(activeProject)
   const sideColumnWidth = Math.max(120, stageDial.layout.sideWidth)
 
@@ -740,29 +742,37 @@ function TimelineView({
           <div className="relative flex h-full w-full flex-col justify-between overflow-hidden">
             <div className="self-start" style={{ marginLeft: `${stageDial.link.right}px`, marginTop: `${stageDial.link.top}px` }}>
               <div className="space-y-1 text-left">
-                {activeLinks.map((row) => {
-                  const external = row.href.startsWith("http") || row.href.startsWith("mailto:")
-                  return (
-                    <a
-                      key={row.label}
-                      href={row.href}
-                      target={external ? "_blank" : undefined}
-                      rel={external ? "noreferrer" : undefined}
-                      className="block font-mono font-medium uppercase tracking-[-0.02em] text-black/74 transition-colors hover:text-black"
-                      style={{ fontSize: `${stageDial.link.fontSize}px` }}
-                    >
-                      {row.label}
-                    </a>
-                  )
-                })}
+                {activeLinks.length > 0 ? (
+                  activeLinks.map((row) => {
+                    const external = row.href.startsWith("http") || row.href.startsWith("mailto:")
+                    return (
+                      <a
+                        key={row.label}
+                        href={row.href}
+                        target={external ? "_blank" : undefined}
+                        rel={external ? "noreferrer" : undefined}
+                        className="block font-mono font-medium uppercase tracking-[-0.02em] text-black/74 transition-colors hover:text-black"
+                        style={{ fontSize: `${stageDial.link.fontSize}px` }}
+                      >
+                        {row.label}
+                      </a>
+                    )
+                  })
+                ) : (
+                  <span className="block font-mono font-medium uppercase tracking-[-0.02em] text-black/32" style={{ fontSize: `${stageDial.link.fontSize}px` }}>
+                    ARCHIVED
+                  </span>
+                )}
               </div>
             </div>
-            <p
-              className="self-start text-left font-mono text-[12px] font-medium uppercase leading-[1.35] tracking-[-0.01em] text-black/80"
-              style={{ marginLeft: `${stageDial.link.right}px`, width: "min(320px, 100%)" }}
-            >
-              {description}
-            </p>
+            {description ? (
+              <p
+                className="self-start text-left font-mono text-[12px] font-medium uppercase leading-[1.35] tracking-[-0.01em] text-black/80"
+                style={{ marginLeft: `${stageDial.link.right}px`, width: "min(320px, 100%)" }}
+              >
+                {description}
+              </p>
+            ) : null}
           </div>
         </div>
 
@@ -787,42 +797,50 @@ function TimelineView({
         </div>
       </div>
 
-      <div className="mx-auto mt-5 w-full max-w-[720px] md:hidden" style={{ paddingLeft: `${Math.max(6, stageDial.link.right * 0.8)}px`, paddingRight: "12px" }}>
-        <p className="text-left font-mono text-[12px] font-medium uppercase tracking-[-0.02em] text-black/80">{description}</p>
-      </div>
+      {description ? (
+        <div className="mx-auto mt-5 w-full max-w-[720px] md:hidden" style={{ paddingLeft: `${Math.max(6, stageDial.link.right * 0.8)}px`, paddingRight: "12px" }}>
+          <p className="text-left font-mono text-[12px] font-medium uppercase tracking-[-0.02em] text-black/80">{description}</p>
+        </div>
+      ) : null}
 
       <div className="mx-auto mt-4 w-full max-w-[720px] md:hidden" style={{ paddingLeft: `${Math.max(6, stageDial.link.right * 0.8)}px`, paddingRight: "12px" }}>
         <div className="space-y-1 text-left">
-          {activeLinks.map((row) => {
-            const external = row.href.startsWith("http") || row.href.startsWith("mailto:")
-            return (
-              <a
-                key={`mobile-${row.label}`}
-                href={row.href}
-                target={external ? "_blank" : undefined}
-                rel={external ? "noreferrer" : undefined}
-                className="block break-words font-mono font-medium uppercase tracking-[-0.02em] text-black/74 transition-colors hover:text-black"
-                style={{ fontSize: `${Math.max(10, stageDial.link.fontSize)}px` }}
-              >
-                {row.label}
-              </a>
-            )
-          })}
+          {activeLinks.length > 0 ? (
+            activeLinks.map((row) => {
+              const external = row.href.startsWith("http") || row.href.startsWith("mailto:")
+              return (
+                <a
+                  key={`mobile-${row.label}`}
+                  href={row.href}
+                  target={external ? "_blank" : undefined}
+                  rel={external ? "noreferrer" : undefined}
+                  className="block break-words font-mono font-medium uppercase tracking-[-0.02em] text-black/74 transition-colors hover:text-black"
+                  style={{ fontSize: `${Math.max(10, stageDial.link.fontSize)}px` }}
+                >
+                  {row.label}
+                </a>
+              )
+            })
+          ) : (
+            <span className="block font-mono font-medium uppercase tracking-[-0.02em] text-black/32" style={{ fontSize: `${Math.max(10, stageDial.link.fontSize)}px` }}>
+              ARCHIVED
+            </span>
+          )}
         </div>
       </div>
 
-      <div className="relative z-20 mt-[24px] md:absolute md:bottom-[-28px] md:left-1/2 md:mt-0 md:w-full md:-translate-x-1/2" style={{ maxWidth: `${stageDial.layout.timelineMaxWidth}px` }}>
+      <div className="relative z-20 mt-[24px] md:absolute md:bottom-0 md:left-1/2 md:mt-0 md:w-full md:-translate-x-1/2" style={{ maxWidth: `${stageDial.layout.timelineMaxWidth}px` }}>
         <TimelineRail projects={projects} activeIndex={activeIndex} onSelect={onSelect} />
       </div>
     </section>
   )
 }
 
-export function ToolsContent({ projects }: ToolsContentProps) {
+export function ToolsContent({ projects, mode }: ToolsContentProps) {
   const modeDial = DEFAULT_MODE_DIAL
+  const router = useRouter()
 
   const safeProjects = useMemo(() => projects.filter((project) => Boolean(project.id && project.name)), [projects])
-  const [mode, setMode] = useState<ToolsMode>("journey")
   const [activeIndex, setActiveIndex] = useState(0)
   const [previousIndex, setPreviousIndex] = useState<number | null>(null)
   const [isTransitionReady, setIsTransitionReady] = useState(false)
@@ -903,56 +921,68 @@ export function ToolsContent({ projects }: ToolsContentProps) {
   }
 
   return (
-    <main
-      className="relative h-full overflow-hidden px-5 pb-6 md:px-6 md:pb-8"
-      style={{ backgroundColor: "#f3f3f3" }}
-    >
+    <main className="relative h-full overflow-hidden px-5 pb-6 md:px-6 md:pb-8" style={{ backgroundColor: "#ebebeb" }}>
+      <style jsx global>{`
+        .tools-archive-scroll {
+          scrollbar-width: none;
+        }
+
+        .tools-archive-scroll::-webkit-scrollbar {
+          display: none;
+          width: 0;
+          height: 0;
+        }
+      `}</style>
       <ToolsLogo />
-      <TopModeToggle mode={mode} onChange={setMode} />
+      <TopModeToggle
+        mode={mode}
+        onChange={(nextMode) => {
+          if (nextMode === mode) return
+          router.push(nextMode === "archive" ? "/tools" : "/tools/journey")
+        }}
+      />
 
-      <div className="relative mx-auto h-full w-full">
-        <div
-          className={`absolute inset-0 overflow-y-auto md:overflow-hidden transition-[opacity,transform] ${mode === "archive" ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-2 opacity-0"}`}
-          style={{ transitionDuration: `${modeDial.transition.modeSwitchMs}ms`, transitionTimingFunction: PROJECT_TRANSITION_EASE }}
-        >
-          <BlockView projects={safeProjects} activeIndex={normalizedActiveIndex} onSelect={startTransition} />
-        </div>
+        <div className="relative mx-auto h-full w-full">
+        {mode === "archive" ? (
+          <div className="tools-archive-scroll h-full overflow-y-auto">
+            <BlockView projects={safeProjects} activeIndex={normalizedActiveIndex} onSelect={startTransition} />
+          </div>
+        ) : null}
 
-        <div
-          className={`absolute inset-0 overflow-visible transition-[opacity,transform] ${mode === "journey" ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-2 opacity-0"}`}
-          style={{ transitionDuration: `${modeDial.transition.modeSwitchMs}ms`, transitionTimingFunction: PROJECT_TRANSITION_EASE }}
-        >
-          <TimelineView
-            activeProject={activeProject}
-            previousProject={previousProject}
-            previousNeighbor={previousNeighbor}
-            nextNeighbor={nextNeighbor}
-            isTransitionReady={isTransitionReady}
-            onNavigateByWheel={(event) => {
-              event.preventDefault()
-              if (Math.abs(event.deltaY) < modeDial.transition.wheelThreshold) return
+        {mode === "journey" ? (
+          <div className="h-full overflow-visible">
+            <TimelineView
+              activeProject={activeProject}
+              previousProject={previousProject}
+              previousNeighbor={previousNeighbor}
+              nextNeighbor={nextNeighbor}
+              isTransitionReady={isTransitionReady}
+              onNavigateByWheel={(event) => {
+                event.preventDefault()
+                if (Math.abs(event.deltaY) < modeDial.transition.wheelThreshold) return
 
-              const now = performance.now()
-              if (now - lastWheelAtRef.current < modeDial.transition.wheelCooldown) return
-              lastWheelAtRef.current = now
-              navigate(event.deltaY > 0 ? 1 : -1)
-            }}
-            onTouchStart={(event) => {
-              touchStartXRef.current = event.touches[0]?.clientX ?? null
-            }}
-            onTouchEnd={(event) => {
-              if (touchStartXRef.current === null) return
-              const endX = event.changedTouches[0]?.clientX ?? touchStartXRef.current
-              const deltaX = endX - touchStartXRef.current
-              touchStartXRef.current = null
-              if (Math.abs(deltaX) < modeDial.transition.swipeThreshold) return
-              navigate(deltaX < 0 ? 1 : -1)
-            }}
-            projects={safeProjects}
-            activeIndex={normalizedActiveIndex}
-            onSelect={startTransition}
-          />
-        </div>
+                const now = performance.now()
+                if (now - lastWheelAtRef.current < modeDial.transition.wheelCooldown) return
+                lastWheelAtRef.current = now
+                navigate(event.deltaY > 0 ? 1 : -1)
+              }}
+              onTouchStart={(event) => {
+                touchStartXRef.current = event.touches[0]?.clientX ?? null
+              }}
+              onTouchEnd={(event) => {
+                if (touchStartXRef.current === null) return
+                const endX = event.changedTouches[0]?.clientX ?? touchStartXRef.current
+                const deltaX = endX - touchStartXRef.current
+                touchStartXRef.current = null
+                if (Math.abs(deltaX) < modeDial.transition.swipeThreshold) return
+                navigate(deltaX < 0 ? 1 : -1)
+              }}
+              projects={safeProjects}
+              activeIndex={normalizedActiveIndex}
+              onSelect={startTransition}
+            />
+          </div>
+        ) : null}
       </div>
     </main>
   )

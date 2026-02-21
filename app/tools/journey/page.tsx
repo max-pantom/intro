@@ -4,15 +4,12 @@ import { StudioFrame } from "@/components/studio/studio-frame"
 
 export const dynamic = "force-dynamic"
 
-export default async function ToolsPage() {
+export default async function ToolsJourneyPage() {
   const toolsProjects = await getToolsProjects()
 
   return (
-    <StudioFrame
-      navOverride="home"
-      headerClassName="px-5 md:px-6 [&>a]:opacity-0 [&>a]:pointer-events-none"
-    >
-      <ToolsContent projects={toolsProjects} mode="archive" />
+    <StudioFrame navOverride="home" headerClassName="hidden">
+      <ToolsContent projects={toolsProjects} mode="journey" />
     </StudioFrame>
   )
 }

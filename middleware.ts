@@ -2,7 +2,8 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
 function isUiSubdomain(hostname: string) {
-  return hostname === "ui.localhost" || hostname.startsWith("ui.localhost:")
+  const hostWithoutPort = hostname.split(":")[0] ?? ""
+  return hostWithoutPort === "ui.localhost" || hostWithoutPort.startsWith("ui.")
 }
 
 export function middleware(request: NextRequest) {
