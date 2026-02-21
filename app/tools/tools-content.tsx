@@ -767,13 +767,13 @@ function TimelineView({
         </div>
 
         <div className="relative w-full md:hidden">
-          <div className="relative w-full overflow-hidden bg-[#d9d9d9]" style={{ height: `${Math.max(240, stageDial.hero.height * 0.75)}px` }}>
+          <div className="relative w-full overflow-hidden bg-[#d9d9d9]" style={{ height: `${Math.min(400, Math.max(220, stageDial.hero.height * 0.6))}px` }}>
             {previousProject ? (
               <div
                 className={`pointer-events-none absolute inset-0 transition-[opacity,transform] ${isTransitionReady ? "translate-y-[-6px] opacity-0" : "translate-y-0 opacity-100"}`}
                 style={{ transitionDuration: `${PROJECT_TRANSITION_MS}ms`, transitionTimingFunction: PROJECT_TRANSITION_EASE }}
               >
-                <SurfaceFrame project={previousProject} highlightIndex={0} className="aspect-auto h-full w-full" />
+                <SurfaceFrame project={previousProject} highlightIndex={0} className="aspect-auto h-full w-full" imageClassName="object-contain" />
               </div>
             ) : null}
 
@@ -781,13 +781,17 @@ function TimelineView({
               className={`absolute inset-0 transition-[opacity,transform] ${previousProject ? (isTransitionReady ? "translate-y-0 opacity-100" : "translate-y-[6px] opacity-0") : "translate-y-0 opacity-100"}`}
               style={{ transitionDuration: `${PROJECT_TRANSITION_MS}ms`, transitionTimingFunction: PROJECT_TRANSITION_EASE }}
             >
-              <SurfaceFrame project={activeProject} highlightIndex={0} className="aspect-auto h-full w-full" />
+              <SurfaceFrame project={activeProject} highlightIndex={0} className="aspect-auto h-full w-full" imageClassName="object-contain" />
             </div>
           </div>
         </div>
       </div>
 
-      <div className="mx-auto mt-3 w-full max-w-[720px] md:hidden" style={{ paddingLeft: `${Math.max(6, stageDial.link.right * 0.8)}px` }}>
+      <div className="mx-auto mt-5 w-full max-w-[720px] md:hidden" style={{ paddingLeft: `${Math.max(6, stageDial.link.right * 0.8)}px`, paddingRight: "12px" }}>
+        <p className="text-left font-mono text-[12px] font-medium uppercase tracking-[-0.02em] text-black/80">{description}</p>
+      </div>
+
+      <div className="mx-auto mt-4 w-full max-w-[720px] md:hidden" style={{ paddingLeft: `${Math.max(6, stageDial.link.right * 0.8)}px`, paddingRight: "12px" }}>
         <div className="space-y-1 text-left">
           {activeLinks.map((row) => {
             const external = row.href.startsWith("http") || row.href.startsWith("mailto:")
@@ -797,7 +801,7 @@ function TimelineView({
                 href={row.href}
                 target={external ? "_blank" : undefined}
                 rel={external ? "noreferrer" : undefined}
-                className="block font-mono font-medium uppercase tracking-[-0.02em] text-black/74 transition-colors hover:text-black"
+                className="block break-words font-mono font-medium uppercase tracking-[-0.02em] text-black/74 transition-colors hover:text-black"
                 style={{ fontSize: `${Math.max(10, stageDial.link.fontSize)}px` }}
               >
                 {row.label}
@@ -806,8 +810,6 @@ function TimelineView({
           })}
         </div>
       </div>
-
-      <p className="mx-auto mt-5 max-w-[720px] font-mono text-[12px] font-medium uppercase tracking-[-0.02em] text-black/80 md:hidden">{description}</p>
 
       <div className="relative z-20 mt-[24px] md:absolute md:bottom-[-28px] md:left-1/2 md:mt-0 md:w-full md:-translate-x-1/2" style={{ maxWidth: `${stageDial.layout.timelineMaxWidth}px` }}>
         <TimelineRail projects={projects} activeIndex={activeIndex} onSelect={onSelect} />
@@ -910,7 +912,7 @@ export function ToolsContent({ projects }: ToolsContentProps) {
 
       <div className="relative mx-auto h-full w-full">
         <div
-          className={`absolute inset-0 overflow-hidden transition-[opacity,transform] ${mode === "archive" ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-2 opacity-0"}`}
+          className={`absolute inset-0 overflow-y-auto md:overflow-hidden transition-[opacity,transform] ${mode === "archive" ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-2 opacity-0"}`}
           style={{ transitionDuration: `${modeDial.transition.modeSwitchMs}ms`, transitionTimingFunction: PROJECT_TRANSITION_EASE }}
         >
           <BlockView projects={safeProjects} activeIndex={normalizedActiveIndex} onSelect={startTransition} />
