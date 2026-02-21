@@ -737,8 +737,8 @@ function TimelineView({
             </div>
           </div>
 
-          <div className="relative flex h-full w-full flex-col justify-between overflow-visible">
-            <div className="self-start" style={{ marginTop: `${stageDial.link.top}px`, marginLeft: `${stageDial.link.right}px` }}>
+          <div className="relative flex h-full w-full flex-col justify-between overflow-hidden">
+            <div className="self-start" style={{ marginLeft: `${stageDial.link.right}px`, marginTop: `${stageDial.link.top}px` }}>
               <div className="space-y-1 text-left">
                 {activeLinks.map((row) => {
                   const external = row.href.startsWith("http") || row.href.startsWith("mailto:")
@@ -757,7 +757,10 @@ function TimelineView({
                 })}
               </div>
             </div>
-            <p className="self-start text-left font-mono text-[12px] font-medium uppercase leading-[1.35] tracking-[-0.01em] text-black/80" style={{ width: "min(320px, 100%)" }}>
+            <p
+              className="self-start text-left font-mono text-[12px] font-medium uppercase leading-[1.35] tracking-[-0.01em] text-black/80"
+              style={{ marginLeft: `${stageDial.link.right}px`, width: "min(320px, 100%)" }}
+            >
               {description}
             </p>
           </div>
