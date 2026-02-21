@@ -10,8 +10,15 @@ type ToolsContentProps = {
   projects: CmsToolProject[]
 }
 
-const TRANSITION_MS = 564
-const TRANSITION_EASE = "cubic-bezier(0.22,1,0.36,1)"
+type ToolsMode = "block" | "timeline"
+
+const PROJECT_TRANSITION_MS = 420
+const PROJECT_TRANSITION_EASE = "cubic-bezier(0.22,1,0.36,1)"
+const SWIPE_THRESHOLD = 42
+
+function clamp(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, value))
+}
 
 function wrapIndex(value: number, total: number) {
   if (total <= 0) return 0
@@ -26,7 +33,11 @@ function isVideoPath(value: string) {
   return /\.(mp4|webm|ogg|mov|m4v)$/i.test(value)
 }
 
-function resolveSurfaceUrl(project: CmsToolProject, highlightIndex: number) {
+function normalizeUpperLabel(value: string) {
+  return value.replace(/\[\s*↗\s*\]/g, "").trim().toUpperCase()
+}
+
+function resolveSurfaceUrl(project: CmsToolProject, highlightIndex = 0) {
   if (project.demoUrl) return project.demoUrl
   if (!project.highlightUrls.length) return ""
   return project.highlightUrls[highlightIndex % project.highlightUrls.length] ?? ""
@@ -49,11 +60,15 @@ function CheckerPattern({ rounded }: { rounded?: boolean }) {
 function SurfaceFrame({
   project,
   highlightIndex,
-  onToggleExpand,
+  overlayClassName,
+  className,
+  imageClassName,
 }: {
   project: CmsToolProject
   highlightIndex: number
-  onToggleExpand: () => void
+  overlayClassName?: string
+  className?: string
+  imageClassName?: string
 }) {
   const surfaceUrl = resolveSurfaceUrl(project, highlightIndex)
   const hasImage = surfaceUrl ? isImagePath(surfaceUrl) : false
@@ -61,21 +76,22 @@ function SurfaceFrame({
   const hasEmbed = Boolean(surfaceUrl && !hasImage && !hasVideo && /^https?:\/\//i.test(surfaceUrl))
 
   return (
-    <div className="relative aspect-[683/388] w-full overflow-hidden rounded-[22px]">
+    <div className={`relative aspect-[683/388] w-full overflow-hidden bg-[#d9d9d9] ${className ?? ""}`}>
       {hasImage ? (
         <PixelatedImage
           src={surfaceUrl}
           alt={project.name}
           fill
-          sizes="(min-width: 1100px) 860px, (min-width: 768px) min(860px, 100vw - 48px), calc(100vw - 32px)"
-          className="object-cover"
+          sizes="(min-width: 1280px) 720px, (min-width: 768px) min(720px, 100vw - 48px), calc(100vw - 32px)"
+          className={`object-cover ${imageClassName ?? ""}`}
           quality={100}
           draggable={false}
+          unoptimized
         />
       ) : null}
 
       {hasVideo ? (
-        <video src={surfaceUrl} className="absolute inset-0 h-full w-full object-cover" autoPlay loop muted playsInline />
+        <video src={surfaceUrl} className={`absolute inset-0 h-full w-full object-cover ${imageClassName ?? ""}`} autoPlay loop muted playsInline />
       ) : null}
 
       {hasEmbed ? (
@@ -88,87 +104,288 @@ function SurfaceFrame({
         />
       ) : null}
 
-      {!surfaceUrl ? <CheckerPattern rounded /> : null}
+      {!surfaceUrl ? <CheckerPattern /> : null}
+      {overlayClassName ? <div className={`absolute inset-0 ${overlayClassName}`} /> : null}
+    </div>
+  )
+}
 
-      <div className="absolute left-3 top-3 flex items-center gap-1.5">
-        <span className="h-[10px] w-[10px] rounded-full bg-black/62 transition-colors hover:bg-black" />
-        <button
-          type="button"
-          onClick={onToggleExpand}
-          className="h-[10px] w-[10px] bg-black/44 transition-colors hover:bg-black"
-          aria-label="Toggle enlarged preview"
-        />
-        <span className="h-[10px] w-[10px] bg-black/48 transition-colors hover:bg-black" style={{ clipPath: "polygon(50% 0, 100% 100%, 0 100%)" }} />
+function ProjectLine({ project }: { project: CmsToolProject }) {
+  return (
+    <div className="mt-[10px] flex items-center justify-between gap-3 font-mono text-[12px] font-medium uppercase leading-none tracking-[-0.02em] text-black/40 transition-colors group-hover:text-black/58">
+      <p className="truncate">{project.name || "UNTITLED TOOL"}</p>
+      <p className="shrink-0">{project.year || "2026"}</p>
+    </div>
+  )
+}
+
+function BlockIcon() {
+  return (
+    <span className="inline-grid grid-cols-2 gap-[1px]">
+      <span className="h-[4px] w-[4px] bg-black" />
+      <span className="h-[4px] w-[4px] bg-black" />
+      <span className="h-[4px] w-[4px] bg-black" />
+      <span className="h-[4px] w-[4px] bg-black" />
+    </span>
+  )
+}
+
+function TimelineIcon() {
+  return (
+    <span className="inline-flex items-end gap-[1px]">
+      <span className="h-[9px] w-[2px] bg-black" />
+      <span className="h-[9px] w-[2px] bg-black" />
+      <span className="h-[9px] w-[2px] bg-black" />
+      <span className="h-[9px] w-[2px] bg-black" />
+    </span>
+  )
+}
+
+function TopModeToggle({
+  mode,
+  onChange,
+}: {
+  mode: ToolsMode
+  onChange: (mode: ToolsMode) => void
+}) {
+  const buttonClassName =
+    "inline-flex items-center gap-1.5 font-mono text-[12px] font-medium uppercase tracking-[-0.02em] transition-opacity hover:opacity-80"
+
+  return (
+    <div className="absolute left-1/2 top-[36px] z-30 -translate-x-1/2">
+      <div className="flex items-center gap-[31px]">
+        <button type="button" onClick={() => onChange("block")} className={`${buttonClassName} ${mode === "block" ? "opacity-80" : "opacity-20"}`}>
+          <BlockIcon />
+          <span>BLOCK</span>
+        </button>
+        <button type="button" onClick={() => onChange("timeline")} className={`${buttonClassName} ${mode === "timeline" ? "opacity-80" : "opacity-20"}`}>
+          <TimelineIcon />
+          <span>TIMELINE</span>
+        </button>
       </div>
     </div>
   )
 }
 
-function ProjectLines({ project }: { project: CmsToolProject }) {
-  const normalizeExternalHref = (value: string) => {
-    const trimmed = value.trim()
-    if (!trimmed) return ""
-    if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("mailto:")) return trimmed
-    if (trimmed.startsWith("/")) return trimmed
-    return `https://${trimmed}`
-  }
+function ToolsLogo() {
+  return (
+    <Link href="/" aria-label="Go to home" className="absolute left-6 top-6 z-30 w-[74px]">
+      <span className="block h-[41px] w-full bg-black" />
+      <span className="mt-[1px] block text-center font-sans text-[29px] font-medium uppercase leading-none tracking-[-0.08em] text-black">PANTOM</span>
+    </Link>
+  )
+}
 
-  const normalizedPrimaryHref = normalizeExternalHref(project.linkHref)
-  const hasExternalLink = normalizedPrimaryHref.startsWith("http") || normalizedPrimaryHref.startsWith("mailto:")
-  const socialLinks = [
-    project.githubHref ? { label: "GITHUB [↗]", href: normalizeExternalHref(project.githubHref) } : null,
-    project.instagramHref ? { label: "INSTAGRAM [↗]", href: normalizeExternalHref(project.instagramHref) } : null,
-  ].filter((item): item is { label: string; href: string } => Boolean(item))
+function BlockView({
+  projects,
+  activeIndex,
+  onSelect,
+}: {
+  projects: CmsToolProject[]
+  activeIndex: number
+  onSelect: (index: number) => void
+}) {
+  const slots = useMemo(
+    () =>
+      Array.from({ length: 6 }, (_, index) => ({
+        slotIndex: index,
+        projectIndex: projects.length > 0 ? index % projects.length : 0,
+      })),
+    [projects.length],
+  )
 
   return (
-    <div className="w-full font-mono text-[12px] uppercase leading-[1.35] tracking-[0.01em] text-black">
-      <div className="flex items-start justify-between gap-3">
-        <p className="truncate pr-3 font-medium">{project.name}</p>
-        <div className="flex shrink-0 flex-col items-end gap-1">
-          {project.linkLabel ? (
-            hasExternalLink ? (
-              <a href={normalizedPrimaryHref} target="_blank" rel="noreferrer" className="text-black/45 hover:text-black/75">
-                {project.linkLabel}
-              </a>
-            ) : (
-              <a href={normalizedPrimaryHref || "#"} className="text-black/45 hover:text-black/75">
-                {project.linkLabel}
-              </a>
-            )
-          ) : (
-            <span className="text-black/32">NO LINK</span>
-          )}
+    <section className="mx-auto flex h-full w-full max-w-[1270px] flex-col justify-start px-[8px] pt-[112px] md:px-[14px] md:pt-[132px] lg:px-[20px]">
+      <div className="grid grid-cols-1 gap-x-[34px] gap-y-[26px] sm:grid-cols-2 lg:grid-cols-3 lg:gap-x-[44px] lg:gap-y-[30px]">
+        {slots.map((slot) => {
+          const project = projects[slot.projectIndex]
+          if (!project) return null
 
-          {socialLinks.length > 0 ? (
-            <div className="flex flex-col items-end gap-1">
-              {socialLinks.map((item) => (
-                <a key={item.label} href={item.href} target="_blank" rel="noreferrer" className="text-black/45 hover:text-black/75">
-                  {item.label}
-                </a>
-              ))}
+          const isSecondaryRow = slot.slotIndex >= 3
+          const isActive = !isSecondaryRow && slot.projectIndex === activeIndex
+
+          return (
+            <button
+              key={`${project.id}-${slot.slotIndex}`}
+              type="button"
+              onClick={() => onSelect(slot.projectIndex)}
+              className={`group text-left transition-transform duration-300 ${isActive ? "scale-100" : "scale-100 hover:scale-[1.02]"}`}
+            >
+              <SurfaceFrame
+                project={project}
+                highlightIndex={0}
+                className={`aspect-[391/263] transition-[filter,opacity,transform] duration-300 ${isSecondaryRow ? "opacity-[0.66] saturate-[0.82]" : "opacity-100 saturate-100"}`}
+                imageClassName=""
+                overlayClassName={isActive ? "" : isSecondaryRow ? "bg-black/36 group-hover:bg-black/24" : "bg-black/22 group-hover:bg-black/10"}
+              />
+              <ProjectLine project={project} />
+            </button>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+
+function TimelineRail({
+  projects,
+  activeIndex,
+  onSelect,
+}: {
+  projects: CmsToolProject[]
+  activeIndex: number
+  onSelect: (index: number) => void
+}) {
+  const railRef = useRef<HTMLDivElement | null>(null)
+  const markerRatio = projects.length > 1 ? activeIndex / (projects.length - 1) : 0
+
+  const openByPointer = (clientX: number) => {
+    if (!railRef.current || projects.length <= 1) return
+    const bounds = railRef.current.getBoundingClientRect()
+    const ratio = clamp((clientX - bounds.left) / bounds.width, 0, 1)
+    const closest = Math.round(ratio * (projects.length - 1))
+    onSelect(closest)
+  }
+
+  return (
+    <div className="relative mx-auto mt-[32px] w-full max-w-[1000px] px-2 md:mt-[40px] md:px-0">
+      <div
+        ref={railRef}
+        className="relative h-[88px] w-full cursor-pointer"
+        onClick={(event) => openByPointer(event.clientX)}
+        onTouchStart={(event) => {
+          const point = event.touches[0]
+          if (point) openByPointer(point.clientX)
+        }}
+      >
+        <div
+          className="absolute inset-x-0 bottom-0 h-[20px] opacity-80"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(to right, transparent 0 7px, rgba(0,0,0,0.85) 7px 8px), linear-gradient(to right, rgba(0,0,0,0.95) 1px, transparent 1px)",
+            backgroundSize: "8px 100%, 92px 100%",
+          }}
+        />
+
+        {projects.map((project, index) => {
+          const ratio = projects.length > 1 ? index / (projects.length - 1) : 0
+          return (
+            <button
+              key={project.id}
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation()
+                onSelect(index)
+              }}
+              className="absolute bottom-0 h-[22px] w-[14px] -translate-x-1/2"
+              style={{ left: `${ratio * 100}%` }}
+              aria-label={`Open ${project.name}`}
+            >
+              <span className={`absolute bottom-0 left-1/2 w-px -translate-x-1/2 ${index === activeIndex ? "h-[20px] bg-[#ff4d20]" : "h-[11px] bg-black"}`} />
+            </button>
+          )
+        })}
+
+        <div className="pointer-events-none absolute bottom-[21px] h-[30px] w-[50px] -translate-x-1/2 overflow-hidden border border-black/10 bg-[#d9d9d9]" style={{ left: `${markerRatio * 100}%` }}>
+          <SurfaceFrame
+            project={projects[activeIndex]}
+            highlightIndex={0}
+            className="aspect-auto h-full w-full"
+            imageClassName="object-cover"
+            overlayClassName="bg-black/0"
+          />
+        </div>
+
+        <p className="pointer-events-none absolute bottom-[54px] -translate-x-1/2 font-mono text-[8px] uppercase tracking-[-0.02em] text-black/40" style={{ left: `${markerRatio * 100}%` }}>
+          {projects[activeIndex]?.year || "2026"}
+        </p>
+      </div>
+    </div>
+  )
+}
+
+function TimelineView({
+  activeProject,
+  previousProject,
+  previousNeighbor,
+  nextNeighbor,
+  isTransitionReady,
+  onNavigateByWheel,
+  onTouchStart,
+  onTouchEnd,
+  projects,
+  activeIndex,
+  onSelect,
+}: {
+  activeProject: CmsToolProject
+  previousProject: CmsToolProject | null
+  previousNeighbor: CmsToolProject
+  nextNeighbor: CmsToolProject
+  isTransitionReady: boolean
+  onNavigateByWheel: (event: WheelEvent<HTMLDivElement>) => void
+  onTouchStart: (event: TouchEvent<HTMLDivElement>) => void
+  onTouchEnd: (event: TouchEvent<HTMLDivElement>) => void
+  projects: CmsToolProject[]
+  activeIndex: number
+  onSelect: (index: number) => void
+}) {
+  const label = normalizeUpperLabel(activeProject.linkLabel || activeProject.name || "TOOL")
+  const description = (activeProject.description || "ADD A DESCRIPTION IN CMS TO DESCRIBE THIS TOOL.").toUpperCase()
+
+  return (
+    <section className="relative mx-auto h-full min-h-[880px] w-full max-w-[1232px] pt-[116px] md:min-h-[920px] md:pt-[136px]" onWheel={onNavigateByWheel} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+      <div className="pointer-events-none absolute left-1/2 top-[26px] hidden h-[320px] w-[500px] -translate-x-1/2 -rotate-[9.9deg] opacity-20 md:block">
+        <SurfaceFrame project={previousNeighbor} highlightIndex={0} className="aspect-auto h-full w-full" imageClassName="object-cover" />
+      </div>
+
+      <div className="pointer-events-none absolute bottom-[186px] left-1/2 hidden h-[320px] w-[500px] -translate-x-1/2 rotate-[8.6deg] opacity-20 md:block">
+        <SurfaceFrame project={nextNeighbor} highlightIndex={0} className="aspect-auto h-full w-full" imageClassName="object-cover" />
+      </div>
+
+      <p className="absolute left-0 top-[180px] hidden w-[222px] font-mono text-[12px] font-medium uppercase tracking-[-0.02em] text-black md:block">{label}</p>
+
+      <div className="relative mx-auto mt-[20px] w-full max-w-[720px] md:absolute md:left-1/2 md:top-1/2 md:mt-0 md:-translate-x-1/2 md:-translate-y-1/2">
+        <div className="relative aspect-[720/473] overflow-hidden bg-[#d9d9d9]">
+          {previousProject ? (
+            <div
+              className={`pointer-events-none absolute inset-0 transition-[opacity,transform] ${isTransitionReady ? "translate-y-[-6px] opacity-0" : "translate-y-0 opacity-100"}`}
+              style={{ transitionDuration: `${PROJECT_TRANSITION_MS}ms`, transitionTimingFunction: PROJECT_TRANSITION_EASE }}
+            >
+              <SurfaceFrame project={previousProject} highlightIndex={0} className="aspect-auto h-full w-full" />
             </div>
           ) : null}
+
+          <div
+            className={`absolute inset-0 transition-[opacity,transform] ${previousProject ? (isTransitionReady ? "translate-y-0 opacity-100" : "translate-y-[6px] opacity-0") : "translate-y-0 opacity-100"}`}
+            style={{ transitionDuration: `${PROJECT_TRANSITION_MS}ms`, transitionTimingFunction: PROJECT_TRANSITION_EASE }}
+          >
+            <SurfaceFrame project={activeProject} highlightIndex={0} className="aspect-auto h-full w-full" />
+          </div>
         </div>
       </div>
 
-      <div className="mt-[132px] flex items-start justify-between gap-5 text-black/80">
-        <p className="max-w-[560px] truncate whitespace-nowrap">{project.description || "ADD A DESCRIPTION IN CMS TO DESCRIBE THIS TOOL."}</p>
-        <p className="shrink-0">{project.year || "2026"}</p>
+      <p className="absolute right-0 top-1/2 hidden w-[222px] -translate-y-1/2 text-right font-mono text-[12px] font-medium uppercase tracking-[-0.02em] text-black/80 xl:block">
+        {description}
+      </p>
+
+      <p className="mx-auto mt-5 max-w-[720px] font-mono text-[12px] font-medium uppercase tracking-[-0.02em] text-black/80 xl:hidden">{description}</p>
+
+      <div className="mt-[24px] md:absolute md:bottom-[18px] md:left-1/2 md:mt-0 md:w-full md:max-w-[1030px] md:-translate-x-1/2">
+        <TimelineRail projects={projects} activeIndex={activeIndex} onSelect={onSelect} />
       </div>
-    </div>
+    </section>
   )
 }
 
 export function ToolsContent({ projects }: ToolsContentProps) {
   const safeProjects = useMemo(() => projects.filter((project) => Boolean(project.id && project.name)), [projects])
+  const [mode, setMode] = useState<ToolsMode>("timeline")
   const [activeIndex, setActiveIndex] = useState(0)
   const [previousIndex, setPreviousIndex] = useState<number | null>(null)
-  const [isTransitioning, setIsTransitioning] = useState(false)
   const [isTransitionReady, setIsTransitionReady] = useState(false)
-  const [highlightIndex, setHighlightIndex] = useState(0)
-  const [isExpanded, setIsExpanded] = useState(false)
   const transitionTimerRef = useRef<number | null>(null)
-  const touchStartYRef = useRef<number | null>(null)
+  const lastWheelAtRef = useRef(0)
+  const touchStartXRef = useRef<number | null>(null)
 
   useEffect(() => {
     return () => {
@@ -180,43 +397,34 @@ export function ToolsContent({ projects }: ToolsContentProps) {
   const normalizedPreviousIndex = previousIndex !== null ? wrapIndex(previousIndex, safeProjects.length) : null
   const activeProject = safeProjects[normalizedActiveIndex]
   const previousProject = normalizedPreviousIndex !== null ? safeProjects[normalizedPreviousIndex] : null
-
-  useEffect(() => {
-    if (!activeProject || activeProject.demoUrl || activeProject.highlightUrls.length < 2) return
-    const intervalId = window.setInterval(() => {
-      setHighlightIndex((value) => (value + 1) % activeProject.highlightUrls.length)
-    }, 2600)
-    return () => window.clearInterval(intervalId)
-  }, [activeProject])
+  const previousNeighbor = safeProjects[wrapIndex(normalizedActiveIndex - 1, safeProjects.length)] ?? activeProject
+  const nextNeighbor = safeProjects[wrapIndex(normalizedActiveIndex + 1, safeProjects.length)] ?? activeProject
 
   const startTransition = useCallback(
     (nextIndex: number) => {
-      if (safeProjects.length < 2 || isTransitioning || nextIndex === normalizedActiveIndex) return
+      if (safeProjects.length < 2) return
+      const normalizedNext = wrapIndex(nextIndex, safeProjects.length)
+      if (normalizedNext === normalizedActiveIndex) return
 
       if (transitionTimerRef.current !== null) window.clearTimeout(transitionTimerRef.current)
-
       setPreviousIndex(normalizedActiveIndex)
-      setActiveIndex(nextIndex)
-      setHighlightIndex(0)
-      setIsTransitioning(true)
+      setActiveIndex(normalizedNext)
       setIsTransitionReady(false)
       window.requestAnimationFrame(() => setIsTransitionReady(true))
 
       transitionTimerRef.current = window.setTimeout(() => {
         setPreviousIndex(null)
-        setIsTransitioning(false)
         setIsTransitionReady(false)
         transitionTimerRef.current = null
-      }, TRANSITION_MS)
+      }, PROJECT_TRANSITION_MS)
     },
-    [safeProjects.length, isTransitioning, normalizedActiveIndex],
+    [safeProjects.length, normalizedActiveIndex],
   )
 
   const navigate = useCallback(
     (direction: -1 | 1) => {
       if (safeProjects.length < 2) return
-      const nextIndex = wrapIndex(normalizedActiveIndex + direction, safeProjects.length)
-      startTransition(nextIndex)
+      startTransition(normalizedActiveIndex + direction)
     },
     [safeProjects.length, normalizedActiveIndex, startTransition],
   )
@@ -228,12 +436,12 @@ export function ToolsContent({ projects }: ToolsContentProps) {
         target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement
       if (isTyping) return
 
-      if (event.key === "ArrowDown") {
+      if (event.key === "ArrowRight" || event.key === "ArrowDown") {
         event.preventDefault()
         navigate(1)
       }
 
-      if (event.key === "ArrowUp") {
+      if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
         event.preventDefault()
         navigate(-1)
       }
@@ -253,68 +461,50 @@ export function ToolsContent({ projects }: ToolsContentProps) {
 
   return (
     <main
-      className="relative h-full overflow-hidden px-4 pt-[168px] md:px-6 md:pt-[228px]"
-      onWheel={(event: WheelEvent<HTMLDivElement>) => {
-        event.preventDefault()
-        if (Math.abs(event.deltaY) < 8) return
-        navigate(event.deltaY > 0 ? 1 : -1)
-      }}
-      onTouchStart={(event: TouchEvent<HTMLDivElement>) => {
-        touchStartYRef.current = event.touches[0]?.clientY ?? null
-      }}
-      onTouchEnd={(event: TouchEvent<HTMLDivElement>) => {
-        if (touchStartYRef.current === null) return
-        const endY = event.changedTouches[0]?.clientY ?? touchStartYRef.current
-        const deltaY = endY - touchStartYRef.current
-        touchStartYRef.current = null
-        if (Math.abs(deltaY) < 42) return
-        navigate(deltaY < 0 ? 1 : -1)
-      }}
+      className="relative h-full overflow-hidden px-4 pb-6 md:px-6 md:pb-8"
+      style={{ backgroundColor: "#f3f3f3" }}
     >
-      <Link href="/" aria-label="Tools logo" className="absolute left-5 top-5 z-20 block h-[60px] w-[75px]">
-        <svg width="75" height="60" viewBox="0 0 75 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect width="74.1667" height="40.8333" fill="black" />
-          <path d="M5.56112 50.374C6.35864 50.374 6.98812 50.186 7.44954 49.8101C7.91667 49.4284 8.15023 48.8929 8.15023 48.2036C8.15023 47.5143 7.92806 46.9931 7.48372 46.6399C7.03939 46.2867 6.41561 46.1101 5.61238 46.1101H3.49324V50.374H5.56112ZM1.38265 56.834V44.3413H5.79183C7.13623 44.3413 8.21859 44.703 9.0389 45.4265C9.85921 46.15 10.2694 47.07 10.2694 48.1865C10.2694 48.9271 10.07 49.5993 9.67122 50.2031C9.27816 50.807 8.73413 51.2826 8.03914 51.6301C7.34985 51.9719 6.58366 52.1428 5.74056 52.1428H3.49324V56.834H1.38265ZM12.2262 56.834H10.0216L14.6016 44.3413H17.242L21.8136 56.834H19.5919L18.387 53.4417H13.431L12.2262 56.834ZM14.0291 51.7412H17.7889L15.9347 46.2639H15.8834L14.0291 51.7412ZM23.3602 44.3413H26.086L30.2474 51.5874C30.874 52.7609 31.3298 53.5926 31.6146 54.0825C31.5918 52.8407 31.5804 51.8608 31.5804 51.1431V44.3413H33.6654V56.834H30.9139L26.9405 50.0237C26.7069 49.5793 26.3936 48.9926 26.0006 48.2634C25.6075 47.5343 25.4081 47.164 25.4024 47.1526C25.4252 48.4172 25.4366 49.4626 25.4366 50.2886V56.834H23.3602V44.3413ZM35.1949 46.1272V44.3413H44.731V46.1272H41.0055V56.834H38.8863V46.1272H35.1949ZM48.6446 44.572C49.4763 44.2188 50.3906 44.0422 51.3875 44.0422C52.3844 44.0422 53.2987 44.2188 54.1305 44.572C54.9622 44.9252 55.6486 45.4037 56.1898 46.0076C56.7367 46.6057 57.1582 47.3007 57.4544 48.0925C57.7563 48.8787 57.9073 49.7104 57.9073 50.5876C57.9073 51.4649 57.7563 52.2995 57.4544 53.0913C57.1582 53.8774 56.7367 54.5724 56.1898 55.1763C55.6486 55.7744 54.9622 56.2501 54.1305 56.6033C53.2987 56.9565 52.3844 57.1331 51.3875 57.1331C50.3906 57.1331 49.4763 56.9565 48.6446 56.6033C47.8129 56.2501 47.1236 55.7744 46.5767 55.1763C46.0356 54.5724 45.6169 53.8774 45.3206 53.0913C45.0244 52.2995 44.8763 51.4649 44.8763 50.5876C44.8763 49.7104 45.0244 48.8787 45.3206 48.0925C45.6169 47.3007 46.0356 46.6057 46.5767 46.0076C47.1236 45.4037 47.8129 44.9252 48.6446 44.572ZM47.2945 48.7847C47.0951 49.3543 46.9954 49.9553 46.9954 50.5876C46.9954 51.22 47.0951 51.8238 47.2945 52.3992C47.4939 52.9688 47.773 53.473 48.1319 53.9116C48.4965 54.3503 48.9608 54.7006 49.5247 54.9626C50.0887 55.219 50.7096 55.3472 51.3875 55.3472C52.0654 55.3472 52.6864 55.219 53.2503 54.9626C53.8143 54.7006 54.2786 54.3503 54.6431 53.9116C55.0134 53.473 55.2983 52.9688 55.4976 52.3992C55.697 51.8238 55.7967 51.22 55.7967 50.5876C55.7967 49.9553 55.697 49.3543 55.4976 48.7847C55.2983 48.2093 55.0134 47.7023 54.6431 47.2637C54.2786 46.825 53.8143 46.4775 53.2503 46.2212C52.6864 45.9591 52.0654 45.8281 51.3875 45.8281C50.7096 45.8281 50.0887 45.9591 49.5247 46.2212C48.9608 46.4775 48.4965 46.825 48.1319 47.2637C47.773 47.7023 47.4939 48.2093 47.2945 48.7847ZM59.8299 56.834V44.3413L63.1197 44.3584L66.3326 54.3132H66.3497L69.5199 44.3413H72.7926V56.834H70.7674V46.7852H70.7076L67.4349 56.834H65.1961L61.9063 46.7852H61.8551V56.834H59.8299Z" fill="black" />
-        </svg>
-      </Link>
+      <ToolsLogo />
+      <TopModeToggle mode={mode} onChange={setMode} />
 
-      <section className={`mx-auto w-full ${isExpanded ? "max-w-[1180px]" : "max-w-[980px]"}`}>
-        <div className="relative">
-          {previousProject ? (
-            <div
-              className={`pointer-events-none absolute inset-0 transition-opacity ${isTransitionReady ? "opacity-0" : "opacity-100"}`}
-              style={{ transitionDuration: `${TRANSITION_MS}ms`, transitionTimingFunction: TRANSITION_EASE }}
-            >
-              <SurfaceFrame project={previousProject} highlightIndex={0} onToggleExpand={() => setIsExpanded((value) => !value)} />
-            </div>
-          ) : null}
-
-          <div
-            className={`transition-opacity ${previousProject ? (isTransitionReady ? "opacity-100" : "opacity-0") : "opacity-100"}`}
-            style={{ transitionDuration: `${TRANSITION_MS}ms`, transitionTimingFunction: TRANSITION_EASE }}
-          >
-            <SurfaceFrame project={activeProject} highlightIndex={highlightIndex} onToggleExpand={() => setIsExpanded((value) => !value)} />
-          </div>
+      <div className="relative mx-auto h-full w-full">
+        <div className={`absolute inset-0 overflow-y-auto transition-[opacity,transform] duration-500 ${mode === "block" ? "opacity-100 translate-y-0" : "pointer-events-none translate-y-2 opacity-0"}`}>
+          <BlockView projects={safeProjects} activeIndex={normalizedActiveIndex} onSelect={startTransition} />
         </div>
 
-        <div className="relative mt-[12px] min-h-[170px]">
-          {previousProject ? (
-            <div
-              className={`pointer-events-none absolute inset-0 transition-opacity ${isTransitionReady ? "opacity-0" : "opacity-100"}`}
-              style={{ transitionDuration: `${TRANSITION_MS}ms`, transitionTimingFunction: TRANSITION_EASE }}
-            >
-              <ProjectLines project={previousProject} />
-            </div>
-          ) : null}
+        <div className={`absolute inset-0 overflow-y-auto transition-[opacity,transform] duration-500 ${mode === "timeline" ? "opacity-100 translate-y-0" : "pointer-events-none translate-y-2 opacity-0"}`}>
+          <TimelineView
+            activeProject={activeProject}
+            previousProject={previousProject}
+            previousNeighbor={previousNeighbor}
+            nextNeighbor={nextNeighbor}
+            isTransitionReady={isTransitionReady}
+            onNavigateByWheel={(event) => {
+              event.preventDefault()
+              if (Math.abs(event.deltaY) < 10) return
 
-          <div
-            className={`transition-opacity ${previousProject ? (isTransitionReady ? "opacity-100" : "opacity-0") : "opacity-100"}`}
-            style={{ transitionDuration: `${TRANSITION_MS}ms`, transitionTimingFunction: TRANSITION_EASE }}
-          >
-            <ProjectLines project={activeProject} />
-          </div>
+              const now = performance.now()
+              if (now - lastWheelAtRef.current < PROJECT_TRANSITION_MS * 0.75) return
+              lastWheelAtRef.current = now
+              navigate(event.deltaY > 0 ? 1 : -1)
+            }}
+            onTouchStart={(event) => {
+              touchStartXRef.current = event.touches[0]?.clientX ?? null
+            }}
+            onTouchEnd={(event) => {
+              if (touchStartXRef.current === null) return
+              const endX = event.changedTouches[0]?.clientX ?? touchStartXRef.current
+              const deltaX = endX - touchStartXRef.current
+              touchStartXRef.current = null
+              if (Math.abs(deltaX) < SWIPE_THRESHOLD) return
+              navigate(deltaX < 0 ? 1 : -1)
+            }}
+            projects={safeProjects}
+            activeIndex={normalizedActiveIndex}
+            onSelect={startTransition}
+          />
         </div>
-      </section>
+      </div>
     </main>
   )
 }
