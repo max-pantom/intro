@@ -317,7 +317,7 @@ function TopModeToggle({
     "inline-flex items-center gap-1.5 font-mono text-[12px] font-medium uppercase tracking-[-0.02em] transition-opacity hover:opacity-80"
 
   return (
-    <div className="absolute left-1/2 top-[36px] z-30 -translate-x-1/2">
+    <div className="absolute left-1/2 top-[88px] z-30 -translate-x-1/2 md:top-[98px]">
       <div className="flex items-center gap-[31px]">
         <button type="button" onClick={() => onChange("archive")} className={`${buttonClassName} ${mode === "archive" ? "opacity-80" : "opacity-20"}`}>
           <BlockIcon />
