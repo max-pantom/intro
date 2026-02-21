@@ -844,7 +844,9 @@ export function ToolsContent({ projects, mode }: ToolsContentProps) {
   const [activeIndex, setActiveIndex] = useState(0)
   const [previousIndex, setPreviousIndex] = useState<number | null>(null)
   const [isTransitionReady, setIsTransitionReady] = useState(false)
+  const [archiveHasScrolled, setArchiveHasScrolled] = useState(false)
   const transitionTimerRef = useRef<number | null>(null)
+  const archiveScrollRef = useRef<HTMLDivElement | null>(null)
   const lastWheelAtRef = useRef(0)
   const touchStartXRef = useRef<number | null>(null)
 
@@ -853,6 +855,24 @@ export function ToolsContent({ projects, mode }: ToolsContentProps) {
       if (transitionTimerRef.current !== null) window.clearTimeout(transitionTimerRef.current)
     }
   }, [])
+
+  useEffect(() => {
+    if (mode !== "archive") {
+      setArchiveHasScrolled(false)
+      return
+    }
+
+    const element = archiveScrollRef.current
+    if (!element) return
+
+    const syncScrolledState = () => {
+      setArchiveHasScrolled(element.scrollTop > 16)
+    }
+
+    syncScrolledState()
+    element.addEventListener("scroll", syncScrolledState, { passive: true })
+    return () => element.removeEventListener("scroll", syncScrolledState)
+  }, [mode])
 
   const normalizedActiveIndex = wrapIndex(activeIndex, safeProjects.length)
   const normalizedPreviousIndex = previousIndex !== null ? wrapIndex(previousIndex, safeProjects.length) : null
@@ -944,7 +964,7 @@ export function ToolsContent({ projects, mode }: ToolsContentProps) {
 
         <div className="relative mx-auto h-full w-full">
         {mode === "archive" ? (
-          <div className="tools-archive-scroll h-full overflow-y-auto">
+          <div ref={archiveScrollRef} className="tools-archive-scroll h-full overflow-y-auto">
             <BlockView projects={safeProjects} activeIndex={normalizedActiveIndex} onSelect={startTransition} />
           </div>
         ) : null}
@@ -984,6 +1004,27 @@ export function ToolsContent({ projects, mode }: ToolsContentProps) {
           </div>
         ) : null}
       </div>
+
+      {mode === "archive" ? (
+        <button
+          type="button"
+          onClick={() => {
+            const element = archiveScrollRef.current
+            if (!element) return
+
+            if (archiveHasScrolled) {
+              element.scrollTo({ top: 0, behavior: "smooth" })
+              return
+            }
+
+            const jump = Math.max(360, Math.round(element.clientHeight * 0.72))
+            element.scrollBy({ top: jump, behavior: "smooth" })
+          }}
+          className="absolute bottom-5 right-5 z-40 font-mono text-[11px] font-medium uppercase tracking-[-0.02em] text-black/62 transition-opacity hover:opacity-80 md:bottom-7 md:right-6"
+        >
+          {archiveHasScrolled ? "UP" : "SCROLL"}
+        </button>
+      ) : null}
     </main>
   )
 }
