@@ -73,7 +73,7 @@ export default async function FoundersPage() {
           <span className="text-[#0c0c0c]">startup founders</span>
         </h1>
 
-        <div className="mt-[32px] flex flex-col items-center gap-[8px]">
+        <div className="mt-[24px] flex flex-col items-center gap-[8px]">
           {pills.map((label, index) => {
             const hoverColors = ["group-hover:text-[#EC4899]", "group-hover:text-[#2067FF]", "group-hover:text-[#10B981]"] as const
             const hoverColor = hoverColors[index] ?? "group-hover:text-[#2067FF]"
@@ -91,7 +91,7 @@ export default async function FoundersPage() {
           })}
         </div>
 
-        <div className="group founders-card-group mt-[64px] flex flex-col items-center">
+        <div className="group founders-card-group mt-[98px] flex flex-col items-center">
           <a
             href="https://metagravity.gumroad.com/l/founders"
             target="_blank"
@@ -99,14 +99,14 @@ export default async function FoundersPage() {
             className="relative block size-[240px] cursor-pointer overflow-hidden rounded-[40px] bg-[#DDDDDD] shadow-[inset_0_0_20px_rgba(0,0,0,0.04)] transition-colors duration-300 group-hover:bg-[#C8C8C8]"
           >
             <div className="absolute left-[18px] top-[18px] flex size-[60px] items-center justify-center rounded-full bg-white transition-transform duration-500 group-hover:rotate-360">
-              <span className="relative size-5">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="absolute inset-0 opacity-50 transition-opacity duration-300 group-hover:opacity-0" aria-hidden>
-                  <path d="M10 4v12" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M4 10h12" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <span className="relative size-5 text-[#252525]">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="absolute inset-0 opacity-70 transition-opacity duration-300 group-hover:opacity-0" aria-hidden>
+                  <path d="M10 4v12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M4 10h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" aria-hidden>
-                  <line x1="4" y1="16" x2="16" y2="4" fill="none" stroke="#A5A3A2" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                  <polyline points="16 11 16 4 9 4" fill="none" stroke="#A5A3A2" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                  <line x1="4" y1="16" x2="16" y2="4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                  <polyline points="16 11 16 4 9 4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
                 </svg>
               </span>
             </div>
@@ -140,7 +140,7 @@ export default async function FoundersPage() {
 
         <div className="fixed bottom-[18px] left-0 right-0 flex justify-center pointer-events-none">
           <div className="inline-flex items-center justify-center gap-1.5 rounded-[70px] bg-[#EBEBEB] px-2 py-1.5 pointer-events-auto">
-            <span className="size-[9px] shrink-0 rounded-full bg-[#2067FF]/70" aria-hidden />
+            <span className="founders-dot-pulse size-[9px] shrink-0 rounded-full bg-[#2067FF]/70" aria-hidden />
             <span className="text-center text-base font-medium text-[#767676]">{slotsLeft} founder{slotsLeft === 1 ? "" : "s"} slot left</span>
           </div>
         </div>

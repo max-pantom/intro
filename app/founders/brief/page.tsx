@@ -174,10 +174,7 @@ export default function FoundersBriefPage() {
   const cardRandom = useMemo(() => {
     const r = () => Math.random()
     return {
-      corner: { x: 12 + r() * 20, y: 12 + r() * 20, size: 24 + r() * 16 },
-      line: { top: 20 + r() * 40, left: 15 + r() * 30, width: 30 + r() * 50, rot: r() * 20 - 10 },
       dot: { top: 50 + r() * 100, right: 15 + r() * 25, size: 6 + r() * 6 },
-      accent: r() > 0.5,
     }
   }, [submitted, randomiseTrigger])
 
@@ -275,7 +272,6 @@ export default function FoundersBriefPage() {
         useCORS: true,
         allowTaint: true,
         backgroundColor: null,
-        borderRadius: 40,
       })
       const link = document.createElement("a")
       link.download = `${(form.productName.trim() || "brief").replace(/[^a-zA-Z0-9-_]/g, "-")}-card.png`
@@ -299,40 +295,16 @@ export default function FoundersBriefPage() {
   )
 
   const cardDecor = (
-    <>
-      {cardRandom.accent && (
-        <div
-          className="absolute rounded-full border-2 border-white/30"
-          style={{
-            left: cardRandom.corner.x,
-            top: cardRandom.corner.y,
-            width: cardRandom.corner.size,
-            height: cardRandom.corner.size,
-          }}
-          aria-hidden
-        />
-      )}
-      <div
-        className="absolute h-px bg-white/25"
-        style={{
-          top: cardRandom.line.top,
-          left: cardRandom.line.left,
-          width: cardRandom.line.width,
-          transform: `rotate(${cardRandom.line.rot}deg)`,
-        }}
-        aria-hidden
-      />
-      <div
-        className="absolute rounded-full bg-white/20"
-        style={{
-          top: cardRandom.dot.top,
-          right: cardRandom.dot.right,
-          width: cardRandom.dot.size,
-          height: cardRandom.dot.size,
-        }}
-        aria-hidden
-      />
-    </>
+    <div
+      className="absolute rounded-full bg-white/20"
+      style={{
+        top: cardRandom.dot.top,
+        right: cardRandom.dot.right,
+        width: cardRandom.dot.size,
+        height: cardRandom.dot.size,
+      }}
+      aria-hidden
+    />
   )
 
   if (submitted) {
