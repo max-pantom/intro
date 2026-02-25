@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     url: "/",
     images: [
       {
-        url: "/opengraph-image",
+        url: "/og/custom-og.png",
         width: 1200,
         height: 630,
         alt: "Pantom",
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: siteTitle,
     description: siteDescription,
-    images: ["/twitter-image"],
+    images: ["/og/custom-og.png"],
   },
 };
 

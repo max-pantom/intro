@@ -1,0 +1,138 @@
+@font-face {
+  font-family: "Open Runde";
+  font-style: normal;
+  font-weight: 400;
+  src: local("Open Runde"), url("https://fonts.cdnfonts.com/s/103141/OpenRunde-Regular-BF64ee9c627e5b6.woff") format("woff");
+}
+
+@font-face {
+  font-family: "Open Runde";
+  font-style: normal;
+  font-weight: 500;
+  src: local("Open Runde"), url("https://fonts.cdnfonts.com/s/103141/OpenRunde-Medium-BF64ee9c62ad3ad.woff") format("woff");
+}
+
+@font-face {
+  font-family: "Open Runde";
+  font-style: normal;
+  font-weight: 600;
+  src: local("Open Runde"), url("https://fonts.cdnfonts.com/s/103141/OpenRunde-Semibold-BF64ee9c629e0a5.woff") format("woff");
+}
+
+@font-face {
+  font-family: "Open Runde";
+  font-style: normal;
+  font-weight: 700;
+  src: local("Open Runde"), url("https://fonts.cdnfonts.com/s/103141/OpenRunde-Bold-BF64ee9c62a2035.woff") format("woff");
+}
+
+.founders-page {
+  font-family: "Open Runde", sans-serif;
+}
+
+@keyframes founders-brief-shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+.founders-brief-shake {
+  animation: founders-brief-shake 0.5s ease-in-out;
+}
+
+/* Success card 3D effect */
+.brief-success-card {
+  transform: rotateX(2deg) rotateY(2deg);
+  backface-visibility: hidden;
+}
+.brief-success-card:hover {
+  transform: rotateX(6deg) rotateY(-6deg) scale(1.03);
+}
+
+/* Brief form: grey focus ring (no blue), light grey/black look when focused or filled */
+.founders-page [data-slot="input"]:focus-visible,
+.founders-page [data-slot="textarea"]:focus-visible {
+  box-shadow: 0 0 0 2px rgb(136 136 136 / 0.3);
+  border-color: transparent;
+}
+
+/* Product card hover: Click to buy shiver + shimmer */
+@keyframes founders-shiver {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-1.5px); }
+  75% { transform: translateX(1.5px); }
+}
+@keyframes founders-shimmer-sweep {
+  from { background-position: -100% 0; }
+  to { background-position: 200% 0; }
+}
+.founders-card-group:hover .founders-click-shiver {
+  animation: founders-shiver 0.2s ease-in-out infinite;
+}
+.founders-click-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.founders-click-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.35) 50%, transparent 100%);
+  background-size: 200% 100%;
+  background-position: -100% 0;
+  pointer-events: none;
+}
+.founders-card-group:hover .founders-click-shimmer::after {
+  animation: founders-shimmer-sweep 1.2s ease-in-out infinite;
+}
+
+/* Bottom pill blue dot: on/off pulse */
+@keyframes founders-dot-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.85); }
+}
+.founders-dot-pulse {
+  animation: founders-dot-pulse 1.5s ease-in-out infinite;
+}
+
+/* Logo link shimmer (reuse pantom style if globals loaded, or local) */
+@keyframes founders-logo-shimmer {
+  from { transform: translateX(-150%) skewX(-22deg); opacity: 0; }
+  18% { opacity: 0.5; }
+  to { transform: translateX(220%) skewX(-22deg); opacity: 0; }
+}
+.founders-logo-shimmer {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+.founders-logo-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: -15% -35%;
+  pointer-events: none;
+  background: linear-gradient(105deg, transparent 34%, rgba(255,255,255,0.5) 50%, transparent 66%);
+  mix-blend-mode: overlay;
+  transform: translateX(-150%) skewX(-22deg);
+  opacity: 0;
+}
+.founders-logo-shimmer:hover::after,
+.founders-logo-shimmer:focus-visible::after {
+  animation: founders-logo-shimmer 1.15s linear;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .founders-card-group:hover .founders-click-shiver {
+    animation: none;
+  }
+  .founders-card-group:hover .founders-click-shimmer::after {
+    animation: none;
+  }
+  .founders-dot-pulse {
+    animation: none;
+  }
+  .founders-logo-shimmer:hover::after,
+  .founders-logo-shimmer:focus-visible::after {
+    animation: none;
+    opacity: 0;
+  }
+}

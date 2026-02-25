@@ -157,11 +157,18 @@ function sanitizeCmsData(input: unknown): CmsPublicData {
     })
     .slice(0, 60)
 
+  const rawSlots = source.foundersSlotsLeft
+  const foundersSlotsLeft =
+    typeof rawSlots === "number" && Number.isFinite(rawSlots) && rawSlots >= 0
+      ? Math.min(999, Math.floor(rawSlots))
+      : defaultCmsPublicData.foundersSlotsLeft
+
   return {
     navItems,
     homeFolderTiles,
     galleries,
     toolsProjects: toolsProjects.length > 0 ? toolsProjects : defaultCmsPublicData.toolsProjects,
+    foundersSlotsLeft,
   }
 }
 

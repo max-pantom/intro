@@ -29,6 +29,8 @@ export type CmsPublicData = {
   homeFolderTiles: FolderTile[]
   galleries: CmsGalleries
   toolsProjects: CmsToolProject[]
+  /** Founders page: number of slots left (editable from CMS). */
+  foundersSlotsLeft: number
 }
 
 export const defaultCmsPublicData: CmsPublicData = {
@@ -40,6 +42,7 @@ export const defaultCmsPublicData: CmsPublicData = {
     labs: [],
     tools: [],
   },
+  foundersSlotsLeft: 3,
   toolsProjects: [
     {
       id: "node-base-effect-tool",

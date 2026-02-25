@@ -30,6 +30,7 @@ function cloneDefaults(): CmsPublicData {
       labs: [...defaultCmsPublicData.galleries.labs],
       tools: [...defaultCmsPublicData.galleries.tools],
     },
+    foundersSlotsLeft: defaultCmsPublicData.foundersSlotsLeft,
     toolsProjects: defaultCmsPublicData.toolsProjects.map((project) => ({
       ...project,
       highlightUrls: [...project.highlightUrls],
@@ -531,6 +532,28 @@ export default function AdminPage() {
             <p className={`mt-2 text-[11px] ${statusColor}`}>{status.message || "Edit rows below and save to publish."}</p>
           </div>
         </div>
+
+        <section className="mt-3 border border-[#dbdbdb] bg-[#ececec] px-3 py-3">
+          <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#858585]">Founders</p>
+          <div className="mt-2 flex flex-wrap items-center gap-3">
+            <label className="flex items-center gap-2 text-[12px] text-[#4f4f4f]">
+              <span className="font-semibold">Slots left</span>
+              <input
+                type="number"
+                min={0}
+                max={999}
+                value={cmsData.foundersSlotsLeft}
+                onChange={(e) => {
+                  const v = e.target.value === "" ? 0 : parseInt(e.target.value, 10)
+                  const n = Number.isFinite(v) && v >= 0 ? Math.min(999, v) : 0
+                  setCmsData({ ...cmsData, foundersSlotsLeft: n })
+                }}
+                className="h-8 w-16 border border-[#d8d8d8] bg-[#f8f8f8] px-2 text-center text-[12px] font-semibold text-[#414141] outline-none"
+              />
+            </label>
+            <span className="text-[11px] text-[#8b8b8b]">Shown on /founders. Decrements when a brief is submitted.</span>
+          </div>
+        </section>
 
         <section className="mt-3 overflow-x-auto border border-[#dbdbdb] bg-[#ececec]">
           <div className="min-w-[980px]">
