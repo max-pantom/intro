@@ -309,10 +309,14 @@ export default function FoundersBriefPage() {
 
   if (submitted) {
     return (
-      <div className="flex min-h-dvh w-full flex-col bg-white">
-        <header className="flex items-center justify-between px-[24px] pt-[24px]">
-          <div className="flex-1" />
-          <Link href="/founders" className="flex shrink-0" aria-label="Pantom home">
+      <div className="page flex min-h-dvh w-full flex-col overflow-y-auto bg-white">
+        <header className="flex shrink-0 items-center justify-between px-[24px] pt-[24px]">
+          <div className="flex-1 transition-[filter] duration-300 [.page:has(.book-a-call:hover)_&]:blur-sm" />
+          <Link
+            href="/founders"
+            className="flex shrink-0 transition-[filter] duration-300 [.page:has(.book-a-call:hover)_&]:blur-sm"
+            aria-label="Pantom home"
+          >
             <PantomLogo />
           </Link>
           <div className="flex flex-1 justify-end">
@@ -326,7 +330,7 @@ export default function FoundersBriefPage() {
             </a>
           </div>
         </header>
-        <main className="flex flex-1 flex-col items-center justify-center gap-8 px-[24px] py-16">
+        <main className="flex flex-1 flex-col items-center justify-center gap-8 px-[24px] py-16 transition-[filter] duration-300 [.page:has(.book-a-call:hover)_&]:blur-sm">
           <h1 className="text-center text-[28px] font-semibold text-[#0c0c0c] md:text-[40px]">Thanks for your brief</h1>
 
           {/* Hidden flat copy for image capture (no 3D transform) */}
@@ -406,10 +410,14 @@ export default function FoundersBriefPage() {
   }
 
   return (
-    <div className="flex min-h-dvh w-full flex-col bg-white">
-      <header className="flex items-center justify-between px-[24px] pt-[24px]">
-        <div className="flex-1" />
-        <Link href="/founders" className="flex shrink-0" aria-label="Pantom home">
+    <div className="page flex min-h-dvh w-full flex-col overflow-y-auto bg-white">
+      <header className="flex shrink-0 items-center justify-between px-[24px] pt-[24px]">
+        <div className="flex-1 transition-[filter] duration-300 [.page:has(.book-a-call:hover)_&]:blur-sm" />
+        <Link
+          href="/founders"
+          className="flex shrink-0 transition-[filter] duration-300 [.page:has(.book-a-call:hover)_&]:blur-sm"
+          aria-label="Pantom home"
+        >
           <PantomLogo />
         </Link>
         <div className="flex flex-1 justify-end">
@@ -424,7 +432,7 @@ export default function FoundersBriefPage() {
         </div>
       </header>
 
-      <main className="flex flex-1 flex-col items-center justify-center px-[24px] py-10">
+      <main className="flex min-h-0 flex-1 flex-col items-center justify-center px-[24px] py-10 transition-[filter] duration-300 [.page:has(.book-a-call:hover)_&]:blur-sm">
         <div className="flex w-full max-w-[322px] flex-col items-center gap-3">
           {/* Step 0: Basics */}
           {stepIndex === 0 && (

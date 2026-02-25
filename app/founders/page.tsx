@@ -3,8 +3,6 @@ import Link from "next/link"
 
 import { getFoundersSlots } from "@/lib/founders-slots"
 
-import { FoundersLightLeak } from "./light-leak"
-
 export const metadata: Metadata = {
   title: "Founders | Pantom Portfolio",
   description: "Landing page for startup founders.",
@@ -50,14 +48,19 @@ function PantomLogo() {
 export default async function FoundersPage() {
   const slotsLeft = await getFoundersSlots()
   return (
-    <div className="page relative flex min-h-dvh w-full min-w-0 flex-col overflow-x-hidden bg-white">
-      <FoundersLightLeak />
+    <div className="page flex min-h-dvh w-full min-w-0 flex-col overflow-x-hidden bg-white">
       <header className="flex items-center justify-between px-4 pt-4 sm:px-6 sm:pt-6 md:px-[24px] md:pt-[24px]">
         <div className="flex-1 transition-[filter] duration-300 [.page:has(.book-a-call:hover)_&]:blur-sm" />
         <Link href="/" className="founders-logo-shimmer flex shrink-0 transition-[filter] duration-300 [.page:has(.book-a-call:hover)_&]:blur-sm" aria-label="Pantom home">
           <PantomLogo />
         </Link>
-        <div className="flex flex-1 justify-end">
+        <div className="flex flex-1 flex-wrap items-center justify-end gap-2">
+          <Link
+            href="/"
+            className="rounded-full bg-[#f0f0f0] px-3 py-1.5 font-sans text-sm font-semibold text-[#a5a5a5] no-underline transition-colors duration-200 hover:bg-[#e8e8e8] hover:text-[#8a8a8a] sm:px-4 sm:py-2 sm:text-base"
+          >
+            works
+          </Link>
           <a
             href="https://cal.com/metagravity/design"
             target="_blank"
@@ -76,19 +79,19 @@ export default async function FoundersPage() {
           <span className="text-[#0c0c0c]">startup founders</span>
         </h1>
 
-        <div className="mt-5 flex flex-col items-center gap-2 sm:mt-6 sm:gap-[8px]">
+        <div className="mt-5 flex max-w-full flex-col items-center gap-2 overflow-x-auto px-1 sm:mt-6 sm:gap-[8px]">
           {pills.map((label, index) => {
             const hoverColors = ["group-hover:text-[#EC4899]", "group-hover:text-[#2067FF]", "group-hover:text-[#10B981]"] as const
             const hoverColor = hoverColors[index] ?? "group-hover:text-[#2067FF]"
             return (
               <div
                 key={label}
-                className="group inline-flex max-w-full cursor-default items-center justify-center gap-1.5 rounded-[70px] bg-[#EBEBEB] px-2 py-1.5 transition-colors"
+                className="group inline-flex w-max cursor-default items-center justify-center gap-1.5 rounded-[70px] bg-[#EBEBEB] px-2 py-1.5 transition-colors"
               >
                 <span className={`inline-block shrink-0 text-[#9D9D9D] transition-transform duration-300 group-hover:rotate-180 ${hoverColor}`}>
                   <PlusIcon className="shrink-0" />
                 </span>
-                <span className="text-pretty text-center text-sm font-medium text-[#767676] sm:text-base">{label.replace(/^\+ /, "")}</span>
+                <span className="whitespace-nowrap text-center text-xs font-medium text-[#767676] sm:text-base">{label.replace(/^\+ /, "")}</span>
               </div>
             )
           })}
