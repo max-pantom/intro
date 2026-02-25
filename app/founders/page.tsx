@@ -3,6 +3,10 @@ import Link from "next/link"
 
 import { getFoundersSlots } from "@/lib/founders-slots"
 
+import { FoundersSlotPill } from "./slot-pill"
+
+export const dynamic = "force-dynamic"
+
 export const metadata: Metadata = {
   title: "Founders | Pantom Portfolio",
   description: "Landing page for startup founders.",
@@ -144,12 +148,7 @@ export default async function FoundersPage() {
           </p>
         </div>
 
-        <div className="fixed bottom-[max(18px,env(safe-area-inset-bottom))] left-0 right-0 flex justify-center pointer-events-none">
-          <div className="inline-flex items-center justify-center gap-1.5 rounded-[70px] bg-[#EBEBEB] px-2 py-1.5 pointer-events-auto">
-            <span className="founders-dot-pulse size-[9px] shrink-0 rounded-full bg-[#2067FF]/70" aria-hidden />
-            <span className="text-center text-sm font-medium text-[#767676] sm:text-base">{slotsLeft} founder{slotsLeft === 1 ? "" : "s"} slot left</span>
-          </div>
-        </div>
+        <FoundersSlotPill initialSlots={slotsLeft} />
       </main>
     </div>
   )
