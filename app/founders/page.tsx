@@ -61,7 +61,7 @@ export default async function FoundersPage() {
         <div className="flex flex-1 flex-wrap items-center justify-end gap-2">
           <Link
             href="/"
-            className="rounded-full bg-[#f0f0f0] px-3 py-1.5 font-sans text-sm font-semibold text-[#a5a5a5] no-underline transition-colors duration-200 hover:bg-[#e8e8e8] hover:text-[#8a8a8a] sm:px-4 sm:py-2 sm:text-base"
+            className="rounded-full bg-[#f0f0f0] px-2 py-1 font-sans text-xs font-semibold text-[#a5a5a5] no-underline transition-colors duration-200 hover:bg-[#e8e8e8] hover:text-[#8a8a8a] sm:px-3 sm:py-1.5 sm:text-sm md:px-4 md:py-2 md:text-base"
           >
             works
           </Link>
@@ -69,7 +69,7 @@ export default async function FoundersPage() {
             href="https://cal.com/metagravity/design"
             target="_blank"
             rel="noopener noreferrer"
-            className="book-a-call rounded-full bg-[#e0e0e0] px-3 py-1.5 font-sans text-sm font-semibold text-[#717171] no-underline hover:bg-[#d8d8d8] sm:px-4 sm:py-2 sm:text-base"
+            className="book-a-call rounded-full bg-[#e0e0e0] px-2 py-1 font-sans text-xs font-semibold text-[#717171] no-underline hover:bg-[#d8d8d8] sm:px-3 sm:py-1.5 sm:text-sm md:px-4 md:py-2 md:text-base"
           >
             Book a call
           </a>
