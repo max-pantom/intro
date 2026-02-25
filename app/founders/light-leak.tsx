@@ -41,7 +41,7 @@ export function FoundersLightLeak() {
       )}
 
       {/* Controls on the left: collapsed pill "Light", expand to show slider + circular swatches */}
-      <div className="fixed left-4 top-4 z-20 flex flex-col gap-3 sm:left-6 sm:top-6 md:left-[24px] md:top-[24px]">
+      <div className="fixed left-4 top-14 z-20 flex flex-col gap-3 sm:left-6 sm:top-6 md:left-[24px] md:top-[24px]">
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}

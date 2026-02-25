@@ -36,7 +36,7 @@ function PantomLogo() {
       viewBox="0 0 95 35"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className="block max-w-[80px] sm:max-w-[95px]"
+      className="block w-[72px] sm:w-[95px] h-auto"
       aria-hidden
     >
       <path
@@ -83,12 +83,12 @@ export default async function FoundersPage() {
             return (
               <div
                 key={label}
-                className="group inline-flex cursor-default items-center justify-center gap-1.5 rounded-[70px] bg-[#EBEBEB] px-2 py-1.5 transition-colors"
+                className="group inline-flex max-w-full cursor-default items-center justify-center gap-1.5 rounded-[70px] bg-[#EBEBEB] px-2 py-1.5 transition-colors"
               >
                 <span className={`inline-block shrink-0 text-[#9D9D9D] transition-transform duration-300 group-hover:rotate-180 ${hoverColor}`}>
                   <PlusIcon className="shrink-0" />
                 </span>
-                <span className="text-center text-sm font-medium text-[#767676] sm:text-base">{label.replace(/^\+ /, "")}</span>
+                <span className="text-pretty text-center text-sm font-medium text-[#767676] sm:text-base">{label.replace(/^\+ /, "")}</span>
               </div>
             )
           })}
