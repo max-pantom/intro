@@ -452,7 +452,7 @@ export default function FoundersBriefPage() {
                 value={form.email}
                 onChange={(e) => update("email", e.target.value)}
                 placeholder="Email"
-                className={`${inputPillClass} ${invalid(!form.email.trim() || !hasValidEmail)}`}
+                className={`${inputPillClass} ${invalid(showInvalid && (!form.email.trim() || !hasValidEmail))}`}
                 aria-label="Email address"
               />
               <Input
@@ -617,7 +617,7 @@ export default function FoundersBriefPage() {
             </>
           )}
 
-          {form.email.trim() && stepIndex === 0 && !hasValidEmail && (
+          {showInvalid && form.email.trim() && stepIndex === 0 && !hasValidEmail && (
             <p className="text-sm text-[#B85450]">Enter a valid email.</p>
           )}
           {submitError && <p className="text-sm text-[#B85450]">{submitError}</p>}
@@ -627,7 +627,7 @@ export default function FoundersBriefPage() {
               <Link
                 key={`prev-${shakeTrigger}`}
                 href="/founders"
-                className={`${btnPillClass} ${showInvalid ? "founders-brief-shake" : ""}`}
+                className={btnPillClass}
               >
                 Previous
               </Link>
@@ -636,7 +636,7 @@ export default function FoundersBriefPage() {
                 key={`prev-${shakeTrigger}`}
                 type="button"
                 onClick={goPrev}
-                className={`${btnPillClass} ${showInvalid ? "founders-brief-shake" : ""}`}
+                className={btnPillClass}
               >
                 Previous
               </button>
@@ -646,7 +646,7 @@ export default function FoundersBriefPage() {
               type="button"
               onClick={goNext}
               disabled={isSubmitting}
-              className={`${btnNextClass} ${!canNext ? "opacity-60" : ""} ${showInvalid && !canNext ? "founders-brief-shake" : ""}`}
+              className={`${btnNextClass} ${!canNext ? "opacity-60" : ""}`}
             >
               {isLastStep ? (isSubmitting ? "Sending…" : "Submit Brief") : "Next"}
             </button>
