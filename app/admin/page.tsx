@@ -72,6 +72,11 @@ export default function AdminPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [checkedRows, setCheckedRows] = useState<string[]>([])
   const [toolProjectPicker, setToolProjectPicker] = useState<Record<number, string>>({})
+  const [emailsOpen, setEmailsOpen] = useState(false)
+  const [sendStartEmail, setSendStartEmail] = useState("")
+  const [sendStartFirstName, setSendStartFirstName] = useState("")
+  const [sendStartStatus, setSendStartStatus] = useState<"idle" | "sending" | "sent" | "error">("idle")
+  const [sendStartError, setSendStartError] = useState<string | null>(null)
 
   const statusColor = useMemo(() => {
     if (status.tone === "error") return "text-[#a9182d]"
@@ -414,6 +419,32 @@ export default function AdminPage() {
     setPreviewPosition({ x: event.clientX + 16, y: event.clientY + 18 })
   }
 
+  const sendStartEmailAction = async () => {
+    setSendStartStatus("sending")
+    setSendStartError(null)
+
+    const res = await fetch("/api/admin/send-start", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: sendStartEmail,
+        firstName: sendStartFirstName || undefined,
+      }),
+    })
+
+    if (!res.ok) {
+      const data = (await res.json().catch(() => ({}))) as { error?: string }
+      setSendStartError(data?.error ?? "Failed to send")
+      setSendStartStatus("error")
+      return
+    }
+
+    setSendStartStatus("sent")
+    setSendStartEmail("")
+    setSendStartFirstName("")
+    setTimeout(() => setSendStartStatus("idle"), 3000)
+  }
+
   const save = async () => {
     const response = await fetch("/api/admin/data", {
       method: "POST",
@@ -515,6 +546,62 @@ export default function AdminPage() {
                 <Image src="/globe.svg" alt="Site" width={14} height={14} className="h-[14px] w-[14px]" />
                 Site
               </Link>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setEmailsOpen((o) => !o)}
+                  className={`inline-flex h-9 items-center border px-4 text-[11px] font-semibold uppercase tracking-[0.08em] ${emailsOpen ? "border-[#b9b9b9] bg-[#ebebeb] text-[#3f3f3f]" : "border-[#c9c9c9] bg-[#f7f7f7] text-[#636363]"}`}
+                >
+                  Emails
+                </button>
+                {emailsOpen ? (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      aria-hidden
+                      onClick={() => setEmailsOpen(false)}
+                    />
+                    <div className="absolute left-0 top-full z-50 mt-1 min-w-[280px] border border-[#d0d0d0] bg-[#f4f4f4] p-3 shadow-[0_4px_12px_rgba(0,0,0,0.1)]">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#6b6b6b]">
+                        Send START
+                      </p>
+                      <p className="mt-0.5 text-[11px] text-[#8b8b8b]">
+                        Pre-call form link. Logged for audit.
+                      </p>
+                      <div className="mt-3 space-y-2">
+                        <input
+                          type="email"
+                          value={sendStartEmail}
+                          onChange={(e) => setSendStartEmail(e.target.value)}
+                          placeholder="person@company.com"
+                          className="h-8 w-full border border-[#d4d4d4] bg-white px-2 text-[12px] text-[#4b4b4b] outline-none placeholder:text-[#9f9f9f]"
+                        />
+                        <input
+                          type="text"
+                          value={sendStartFirstName}
+                          onChange={(e) => setSendStartFirstName(e.target.value)}
+                          placeholder="First name (optional)"
+                          className="h-8 w-full border border-[#d4d4d4] bg-white px-2 text-[12px] text-[#4b4b4b] outline-none placeholder:text-[#9f9f9f]"
+                        />
+                        <button
+                          type="button"
+                          onClick={sendStartEmailAction}
+                          disabled={sendStartStatus === "sending" || !sendStartEmail.trim()}
+                          className="h-8 border border-[#c9c9c9] bg-[#f7f7f7] px-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#636363] disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {sendStartStatus === "sending" ? "Sending..." : sendStartStatus === "sent" ? "Sent" : "Send"}
+                        </button>
+                        {sendStartError ? (
+                          <p className="text-[11px] text-[#a9182d]">{sendStartError}</p>
+                        ) : null}
+                        {sendStartStatus === "sent" ? (
+                          <p className="text-[11px] text-[#126640]">Sent. Log recorded.</p>
+                        ) : null}
+                      </div>
+                    </div>
+                  </>
+                ) : null}
+              </div>
               <a
                 href="/admin/analytics"
                 className="inline-flex h-9 items-center border border-[#c9c9c9] bg-[#f7f7f7] px-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#636363]"
