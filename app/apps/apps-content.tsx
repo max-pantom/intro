@@ -17,14 +17,13 @@ export function AppsContent({ appsImages, cardsToRender }: AppsContentProps) {
   return (
     <>
       <div
-        className={`pointer-events-none absolute left-1/2 top-5 z-10 -translate-x-1/2 transition-all ${showFolder ? "translate-y-0 opacity-100 duration-[220ms]" : "-translate-y-6 opacity-0 duration-150"}`}
+        className={`pointer-events-none absolute left-1/2 top-5 z-10 -translate-x-1/2 transition-all ${showFolder ? "translate-y-0 opacity-100 duration-220" : "-translate-y-6 opacity-0 duration-150"}`}
       >
         <FolderIcon color="silver" className="h-[62px] w-[76px] md:h-[76px] md:w-[92px]" />
       </div>
 
       <main
         className="pantom-scrollbar h-full overflow-y-auto px-5 pb-8 pt-[170px] md:px-6 md:pb-10 md:pt-[212px]"
-        data-analytics-section="apps-gallery"
         onScroll={(event) => {
           const scrollTop = event.currentTarget.scrollTop
           const isAtTop = scrollTop <= 4
@@ -34,16 +33,13 @@ export function AppsContent({ appsImages, cardsToRender }: AppsContentProps) {
           lastScrollTopRef.current = scrollTop
         }}
       >
-        <section className="grid w-full grid-cols-2 gap-[10px] md:grid-cols-4" data-analytics-section="apps-grid">
+        <section className="grid w-full grid-cols-2 gap-[10px] md:grid-cols-4">
           {Array.from({ length: cardsToRender }).map((_, index) => {
             const src = appsImages[index]
             return (
               <article
                 key={src ?? `placeholder-${index}`}
                 className="flex min-h-[220px] items-center justify-center overflow-hidden md:min-h-[250px]"
-                data-analytics-item-id={src ?? ""}
-                data-analytics-item-type="apps"
-                data-analytics-item-label={src ?? ""}
               >
                 {src ? (
                   <PixelatedImage

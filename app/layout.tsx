@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/react";
 import { Agentation } from "agentation";
 import { DialRoot } from "dialkit";
 import type { ReactNode } from "react";
-import { SiteAnalytics } from "@/components/analytics/site-analytics";
 import "dialkit/styles.css";
 import "./globals.css";
+import { WormkeyOverlay } from "wormkey";
 
 const siteTitle = "Pantom Portfolio";
 const siteDescription = "Pantom is a creative studio for design, development, branding, and MVP delivery.";
@@ -61,8 +62,11 @@ export default function RootLayout({
     <html lang="en">
       <body className="antialiased">
         {children}
-        <SiteAnalytics />
+        <Analytics />
         {process.env.NODE_ENV === "development" && <Agentation />}
+        <WormkeyOverlay
+          gatewayUrl={process.env.NEXT_PUBLIC_WORMKEY_GATEWAY_URL ?? "https://wormkey.run"}
+        />
         <DialRoot />
       </body>
     </html>

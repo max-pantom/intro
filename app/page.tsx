@@ -27,8 +27,8 @@ export default function HomePage() {
 
   return (
     <StudioFrame navOverride="home">
-      <main className="flex h-full items-center justify-center px-4" data-analytics-section="hero">
-        <section className="grid grid-cols-2 gap-x-7 gap-y-8 sm:grid-cols-3 sm:gap-x-[50px] sm:gap-y-[50px]" data-analytics-section="home-folders">
+      <main className="flex h-full items-center justify-center px-4">
+        <section className="grid grid-cols-2 gap-x-7 gap-y-8 sm:grid-cols-3 sm:gap-x-[50px] sm:gap-y-[50px]">
           {folders.map((folder) => (
             <FolderTileLink key={folder.href} folder={folder} />
           ))}

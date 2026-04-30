@@ -1,7 +1,6 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState, type MouseEvent } from "react"
-import Image from "next/image"
 import Link from "next/link"
 
 import { defaultCmsPublicData, type CmsPublicData, type CmsToolProject, type GalleryKey } from "@/lib/cms-types"
@@ -543,7 +542,7 @@ export default function AdminPage() {
                 href="/"
                 className="inline-flex h-9 items-center gap-2 border border-[#c9c9c9] bg-[#f7f7f7] px-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#636363]"
               >
-                <Image src="/globe.svg" alt="Site" width={14} height={14} className="h-[14px] w-[14px]" />
+                <img src="/globe.svg" alt="Site" width={14} height={14} className="h-[14px] w-[14px]" loading="eager" decoding="async" />
                 Site
               </Link>
               <div className="relative">
@@ -602,12 +601,6 @@ export default function AdminPage() {
                   </>
                 ) : null}
               </div>
-              <a
-                href="/admin/analytics"
-                className="inline-flex h-9 items-center border border-[#c9c9c9] bg-[#f7f7f7] px-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#636363]"
-              >
-                Analytics
-              </a>
               <button
                 type="button"
                 onClick={logout}

@@ -6,7 +6,6 @@ import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from
 
 import { defaultCmsPublicData } from "@/lib/cms-types"
 import { fetchCmsPublicData } from "@/lib/cms-public-client"
-import { trackCmsClick } from "@/lib/track-click"
 import { type FolderTile, type NavItem, type NavKey } from "@/lib/studio-data"
 
 type StudioFrameProps = {
@@ -135,12 +134,6 @@ export function StudioFrame({
   const runCommand = (command: CommandTarget) => {
     setIsCommandOpen(false)
     setCommandQuery("")
-    trackCmsClick({
-      source: "command",
-      sourceContext: "command-palette",
-      label: command.label,
-      href: command.href,
-    })
 
     if (command.external || command.href.startsWith("mailto:") || command.href.startsWith("http")) {
       window.location.href = command.href
@@ -161,13 +154,7 @@ export function StudioFrame({
 
   const handleNavItemClick = (item: NavItem) => {
     setIsMobileMenuOpen(false)
-    trackCmsClick({
-      source: "nav",
-      sourceContext: "studio-nav",
-      label: item.label,
-      href: item.href,
-      section: "nav",
-    })
+    void item
   }
 
   const emitLabsColumnsChange = (delta: -1 | 1) => {
@@ -253,7 +240,6 @@ export function StudioFrame({
                   href={item.href}
                   className={itemClassName}
                   style={itemStyle}
-                  data-analytics-source="studio-nav"
                   onClick={() => handleNavItemClick(item)}
                 >
                   <span className={homeBadgeClassName}>{isActive ? `[ ${item.label} ]` : item.label}</span>
@@ -265,7 +251,6 @@ export function StudioFrame({
                   href={item.href}
                   className={itemClassName}
                   style={itemStyle}
-                  data-analytics-source="studio-nav"
                   onClick={() => handleNavItemClick(item)}
                 >
                   <span className={homeBadgeClassName}>{isActive ? `[ ${item.label} ]` : item.label}</span>

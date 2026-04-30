@@ -192,11 +192,10 @@ export default function BeNextPage() {
                 type="button"
                 onClick={startFlow}
                 className="bg-[#0b0b0b] px-[10px] py-[4px] font-mono text-[16px] uppercase tracking-[0.02em] text-white"
-                data-analytics-source="start-hero"
               >
                 [ APPLY TO WORK TOGETHER ]
               </button>
-              <p className="max-w-[560px] font-mono text-[16px] uppercase leading-[1.25] tracking-[0.02em] text-[#121212]">
+              <p className="max-w-[560px] font-mono text-[16px] uppercase leading-tight tracking-[0.02em] text-[#121212]">
                 PANTOM PARTNERS WITH FOUNDERS BUILDING REAL PRODUCTS.
                 <br />
                 WE DESIGN THE SYSTEM.

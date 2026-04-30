@@ -10,7 +10,7 @@ type LabsContentProps = {
 
 function LabsTile({ src, sizes, priority }: { src: string; sizes: string; priority?: boolean }) {
   return (
-    <article className="overflow-hidden" data-analytics-item-id={src} data-analytics-item-type="labs" data-analytics-item-label={src}>
+    <article className="overflow-hidden">
       <PixelatedImage
         src={src}
         alt=""
@@ -64,7 +64,7 @@ export function LabsContent({ labImages }: LabsContentProps) {
 
   return (
     <>
-      <section className="grid gap-[8px] md:hidden" style={{ gridTemplateColumns: `repeat(${mobileColumnCount}, minmax(0, 1fr))` }} data-analytics-section="labs-grid-mobile">
+      <section className="grid gap-[8px] md:hidden" style={{ gridTemplateColumns: `repeat(${mobileColumnCount}, minmax(0, 1fr))` }}>
         {labImages.map((src, index) => (
           <LabsTile
             key={src}
@@ -75,7 +75,7 @@ export function LabsContent({ labImages }: LabsContentProps) {
         ))}
       </section>
 
-      <section className="hidden md:grid md:gap-[8px]" style={{ gridTemplateColumns: `repeat(${desktopColumnCount}, minmax(0, 1fr))` }} data-analytics-section="labs-grid-desktop">
+      <section className="hidden md:grid md:gap-[8px]" style={{ gridTemplateColumns: `repeat(${desktopColumnCount}, minmax(0, 1fr))` }}>
         {desktopColumns.map((column, columnIndex) => (
           <div key={`column-${columnIndex}`} className="flex flex-col gap-[8px]">
             {column.map((imageIndex) => {

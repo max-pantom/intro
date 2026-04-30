@@ -1,5 +1,3 @@
-import Image from "next/image"
-
 type FolderColor = "silver" | "graphite" | "red" | "blue" | "yellow" | "purple"
 
 const folderAssets: Record<Exclude<FolderColor, "graphite">, string> = {
@@ -24,14 +22,32 @@ export function FolderIcon({ color, className }: FolderIconProps) {
     >
       {isWebsiteFolder ? (
         <>
-          <Image src="/folders/website-base.svg" alt="" fill sizes="(min-width: 768px) 200px, 94px" className="object-fill" />
+          <img
+            src="/folders/website-base.svg"
+            alt=""
+            loading="eager"
+            decoding="async"
+            className="absolute inset-0 h-full w-full object-fill"
+          />
           <div className="absolute inset-x-0 bottom-0 top-[22.17%] bg-[linear-gradient(180deg,#343434_0%,#232323_59.63%,#000000_100%)]" />
           <div className="pointer-events-none absolute bottom-[14.69%] left-[-6.25%] h-[37.92%] w-[112.5%] mix-blend-overlay">
-            <Image src="/folders/website-overlay.svg" alt="" fill sizes="(min-width: 768px) 225px, 106px" className="object-fill" />
+            <img
+              src="/folders/website-overlay.svg"
+              alt=""
+              loading="eager"
+              decoding="async"
+              className="absolute inset-0 h-full w-full object-fill"
+            />
           </div>
         </>
       ) : (
-        <Image src={folderAssets[color]} alt="" fill sizes="(min-width: 768px) 200px, 94px" className="object-fill" />
+        <img
+          src={folderAssets[color]}
+          alt=""
+          loading="eager"
+          decoding="async"
+          className="absolute inset-0 h-full w-full object-fill"
+        />
       )}
     </div>
   )
